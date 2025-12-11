@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package promotion;
+
+// Request Parameters
+message DecrStockRequest {
+  int64 courseId = 1;      // Course ID
+  int32 num = 2;           // Deduction Quantity
+}
+
+// Response Parameters
+message DecrStockResponse {
+  bool success = 1;        // Success Status
+  string message = 2;      // Return Message
+}
+
+// Marketing Service Interface Definition
+service PromotionService {
+  // Decrement Inventory Interface
+  rpc DecrStock(DecrStockRequest) returns (DecrStockResponse);
+}

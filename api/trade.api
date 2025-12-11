@@ -1,0 +1,28 @@
+syntax = "v1"
+
+type (
+	// Place Order Request
+	PlaceOrderReq {
+		CourseIds  []int64 `json:"courseIds"`           // Purchased course list
+		CouponIds  []int64  `json:"couponIds,optional"`   // Selected coupon IDs, optional
+		OrderId    int64   `json:"orderId"`             // Pre-generated order ID
+	}
+	
+	// Place Order Response
+	PlaceOrderResp {
+		OrderId     int64  `json:"orderId"`     // Returned order number
+		PayAmount   int    `json:"payAmount"`   // Actual payment amount (in cents)
+		Status      int    `json:"status"`      // Order status (1: Pending Payment)
+	}
+)
+
+@server(
+	group: order
+	prefix: /v1/trade/order
+	jwt: Auth // 开启JWT认证，user_id从Token解析，不通过Req传递，更安全
+)
+service trade-api {
+	@doc "User Place Order Interface"
+	@handler PlaceOrder
+	post /place (PlaceOrderReq) returns (PlaceOrderResp)
+}

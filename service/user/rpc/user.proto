@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package user;
+
+// Request Parameters
+message GetUserRequest {
+  int64 userId = 1;        // User ID
+}
+
+// Response Parameters
+message GetUserResponse {
+  int64 userId = 1;        // User ID
+  string username = 2;     // Username
+  string mobile = 3;       // Mobile Number
+}
+
+// User Service Interface Definition
+service UserService {
+  // Get User Information Interface
+  rpc GetUser(GetUserRequest) returns (GetUserResponse);
+}

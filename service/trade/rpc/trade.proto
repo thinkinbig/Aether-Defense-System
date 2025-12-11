@@ -1,0 +1,25 @@
+syntax = "proto3";
+
+package trade;
+
+// Request Parameters
+message PlaceOrderRequest {
+  int64 userId = 1;        // User ID, parsed from JWT Token
+  repeated int64 courseIds = 2;  // Purchased course ID list
+  repeated int64 couponIds = 3;  // Selected coupon ID list
+  int64 orderId = 4;       // Snowflake algorithm ID
+  int32 realAmount = 5;    // Order actual payment amount (cents)
+}
+
+// Response Parameters
+message PlaceOrderResponse {
+  int64 orderId = 1;       // Order ID
+  int32 payAmount = 2;     // Actual payment amount (in cents)
+  int32 status = 3;        // Order status (1: Pending Payment)
+}
+
+// Trading Service Interface Definition
+service TradeService {
+  // Place Order Interface
+  rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+}
