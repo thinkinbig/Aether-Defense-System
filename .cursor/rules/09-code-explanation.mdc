@@ -1,0 +1,236 @@
+# Code Explanation Standards
+
+## When User Asks "What does this code mean?"
+
+When the user asks about code meaning, you MUST provide a comprehensive explanation following this structure:
+
+### 1. Design Purpose
+
+**ALWAYS start with the design purpose:**
+- What problem does this code solve?
+- What is the intended behavior?
+- What are the design patterns used?
+- How does it fit into the overall system architecture?
+
+**Example approach:**
+```markdown
+## Design Purpose
+This code implements [specific functionality] to solve [specific problem].
+It follows the [design pattern] pattern to ensure [benefit].
+The design aligns with the [architectural principle] of the system.
+```
+
+### 2. Git History Analysis
+
+**MUST analyze git history to understand evolution:**
+- Use `git log` to trace commit history for the file/function
+- Identify key milestones in the code's evolution
+- Explain why changes were made (from commit messages)
+- Show how the code has adapted over time
+
+**Commands to use:**
+```bash
+# Get file history
+git log --follow --pretty=format:"%h - %an, %ar : %s" -- <file_path>
+
+# Get detailed changes
+git log -p --follow -- <file_path>
+
+# Get blame information
+git blame <file_path>
+
+# Get commit statistics
+git log --stat --follow -- <file_path>
+```
+
+**Analysis structure:**
+```markdown
+## Evolution History
+- **Initial Implementation (YYYY-MM-DD)**: [What was the original purpose?]
+- **Key Changes**:
+  - [Commit hash]: [What changed and why?]
+  - [Commit hash]: [What changed and why?]
+- **Current State**: [How has it evolved to current form?]
+```
+
+### 3. Module Relationships
+
+**MUST identify and explain relationships:**
+- What modules/services does this code interact with?
+- What are the dependencies (imports)?
+- How does it fit into the service architecture?
+- What are the upstream and downstream dependencies?
+
+**Analysis approach:**
+1. **Direct Dependencies**: Analyze imports and function calls
+2. **Service Layer**: Identify which service layer (API/RPC/Common)
+3. **Inter-Service Communication**: Identify gRPC calls, message queue usage
+4. **Data Flow**: Trace how data flows through the system
+
+**Structure:**
+```markdown
+## Module Relationships
+
+### Direct Dependencies
+- `package/import`: [Purpose and relationship]
+
+### Service Layer
+- **Layer**: [API/RPC/Common]
+- **Domain**: [trade/promotion/user]
+
+### Inter-Service Communication
+- **Calls**: [Which services are called?]
+- **Called By**: [Which services call this?]
+- **Message Queue**: [RocketMQ topics/consumers]
+
+### Data Flow
+1. [Input source] → [This code] → [Output destination]
+```
+
+### 4. Global Role
+
+**MUST explain the code's role in the entire system:**
+- What is its position in the system architecture?
+- How does it contribute to system goals (40K QPS, P99 < 100ms, 99.99% availability)?
+- What would break if this code didn't exist?
+- How does it support the high-concurrency requirements?
+
+**Analysis structure:**
+```markdown
+## Global Role
+
+### System Position
+- **Architectural Layer**: [API/RPC/Data/Infrastructure]
+- **Critical Path**: [Is it in the hot path?]
+- **Performance Impact**: [How does it affect latency/QPS?]
+
+### System Goals Contribution
+- **QPS Support**: [How does it handle high concurrency?]
+- **Latency**: [What's the performance characteristic?]
+- **Availability**: [How does it ensure reliability?]
+
+### System Dependencies
+- **If Removed**: [What would break?]
+- **If Changed**: [What would be affected?]
+- **If Failed**: [What's the failure impact?]
+```
+
+## Explanation Template
+
+When explaining code, use this template:
+
+```markdown
+# Code Explanation: [Function/File Name]
+
+## 1. Design Purpose
+[Explain what problem it solves and how]
+
+## 2. Evolution History
+[Show git history analysis]
+
+## 3. Module Relationships
+[Explain dependencies and interactions]
+
+## 4. Global Role
+[Explain system-wide importance]
+
+## 5. Code Walkthrough
+[Line-by-line or section-by-section explanation]
+
+## 6. Related Code
+[Link to related functions/modules]
+```
+
+## Tools and Commands
+
+### Git History Analysis
+```bash
+# File history
+git log --follow --oneline -- <file_path>
+
+# Detailed changes
+git log -p --follow -- <file_path>
+
+# Blame (who changed what)
+git blame -L <start>,<end> <file_path>
+
+# Show specific commit
+git show <commit_hash>
+
+# Find when function was added
+git log -S "<function_name>" --source --all
+```
+
+### Code Relationship Analysis
+```bash
+# Find usages
+grep -r "<function_name>" --include="*.go"
+
+# Find imports
+grep -r "import.*<package>" --include="*.go"
+
+# Find service calls
+grep -r "<ServiceName>Client" --include="*.go"
+```
+
+### Architecture Context
+- Check `doc/design/architecture.md` for system architecture
+- Check `doc/coding-standards/service-design-rules.md` for service relationships
+- Check `.cursor/rules/04-architecture.mdc` for architectural rules
+
+## Best Practices
+
+1. **Always provide context**: Don't just explain what the code does, explain WHY
+2. **Trace the evolution**: Show how the code has changed over time
+3. **Map relationships**: Visualize how this code connects to other parts
+4. **Consider system impact**: Explain how this code affects overall system behavior
+5. **Use examples**: Provide concrete examples of how the code is used
+6. **Link to documentation**: Reference relevant architecture and design docs
+
+## Example Explanation Flow
+
+When user asks "What does this code mean?":
+
+1. **Immediately analyze**:
+   - Read the code carefully
+   - Check git history
+   - Identify dependencies
+   - Map to architecture
+
+2. **Provide structured explanation**:
+   - Start with design purpose
+   - Show evolution history
+   - Explain relationships
+   - Describe global role
+
+3. **Add context**:
+   - Reference related code
+   - Link to documentation
+   - Show usage examples
+   - Explain design decisions
+
+## Special Considerations
+
+### For High-Concurrency Code
+- Explain how it handles 40K QPS
+- Show performance optimizations
+- Explain concurrency patterns
+- Discuss race conditions and safety
+
+### For Service Communication
+- Explain gRPC call patterns
+- Show error handling
+- Explain timeout and retry logic
+- Map service dependencies
+
+### For Data Access
+- Explain sharding strategy
+- Show caching patterns
+- Explain transaction handling
+- Discuss consistency guarantees
+
+### For Business Logic
+- Explain domain rules
+- Show validation logic
+- Explain state transitions
+- Discuss edge cases

@@ -18,8 +18,24 @@ message PlaceOrderResponse {
   int32 status = 3;        // Order status (1: Pending Payment)
 }
 
+// Cancel Order Request Parameters
+message CancelOrderRequest {
+  int64 userId = 1;        // User ID, parsed from JWT Token
+  int64 orderId = 2;       // Order ID to cancel
+}
+
+// Cancel Order Response Parameters
+message CancelOrderResponse {
+  int64 orderId = 1;       // Order ID
+  int32 status = 2;        // Updated order status (2: Closed)
+  bool success = 3;        // Whether cancellation was successful
+}
+
 // Trading Service Interface Definition
 service TradeService {
   // Place Order Interface
   rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
+  
+  // Cancel Order Interface
+  rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
 }

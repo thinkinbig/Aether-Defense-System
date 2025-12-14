@@ -1,0 +1,275 @@
+# Git Workflow (MANDATORY)
+
+## Git Workflow Process - Follow for EVERY Code Change
+
+When making ANY code modification, you MUST follow this Git workflow:
+
+```
+1. Create New Branch (from main/master)
+   ↓
+2. Switch to New Branch
+   ↓
+3. Make Changes (TDD → Code → Test → Docs)
+   ↓
+4. Commit Changes (follow commit message format)
+   ↓
+5. Push Branch to Remote
+   ↓
+6. Create Pull Request
+   ↓
+7. Code Review
+   ↓
+8. Merge to Main Branch
+```
+
+## Step 1: Create New Branch
+
+**ALWAYS create a new branch for each change. NEVER commit directly to main/master.**
+
+### Branch Naming Convention
+
+Format: `<type>/<description>`
+
+**Types:**
+- `feat/` - New feature
+- `fix/` - Bug fix
+- `test/` - Test related
+- `refactor/` - Refactoring
+- `perf/` - Performance optimization
+- `docs/` - Documentation update
+- `chore/` - Build/tool related
+- `hotfix/` - Urgent fix
+
+**Description:**
+- Use lowercase letters and hyphens
+- Keep it concise (max 50 characters)
+- Describe the change clearly
+
+**Examples:**
+```bash
+feat/order-coupon-support      # New feature: order coupon support
+fix/redis-connection-pool      # Bug fix: Redis connection pool
+test/trade-service-integration  # Test: trade service integration
+refactor/promotion-service      # Refactor: promotion service
+perf/redis-lua-optimization    # Performance: Redis Lua optimization
+docs/api-documentation          # Documentation: API docs update
+chore/update-dependencies       # Chore: update dependencies
+hotfix/order-payment-bug        # Hotfix: order payment bug
+```
+
+### Branch Creation Commands
+
+```bash
+# 1. Switch to main branch and update
+git checkout main
+git pull origin main
+
+# 2. Create and switch to new branch
+git checkout -b feat/order-coupon-support
+
+# 3. Verify branch
+git branch  # Should show * feat/order-coupon-support
+```
+
+## Step 2: Make Changes
+
+Follow the TDD workflow:
+1. Write tests first
+2. Implement code
+3. Run all tests
+4. Update documentation
+
+## Step 3: Commit Changes
+
+### Commit Message Format (Conventional Commits)
+
+```
+<type>(<scope>): <subject>
+
+<body>
+
+<footer>
+```
+
+**Type (required):**
+- `feat`: New feature
+- `fix`: Bug fix
+- `docs`: Documentation
+- `test`: Test related
+- `refactor`: Refactoring
+- `perf`: Performance
+- `chore`: Build/tool
+- `style`: Code style (formatting)
+- `ci`: CI/CD
+
+**Scope (optional):**
+- `trade`: Trade service
+- `promotion`: Promotion service
+- `user`: User service
+- `api`: API layer
+- `rpc`: RPC layer
+- `common`: Common components
+
+**Subject (required):**
+- Use imperative mood, present tense
+- Lowercase first letter
+- No period at the end
+- Max 50 characters
+
+**Body (optional):**
+- Explain what and why
+- Compare with previous behavior
+- Reference related issues
+
+**Footer (optional):**
+- `Closes #123` - Close issue
+- `Refs #456` - Reference issue
+- `BREAKING CHANGE: <description>` - Breaking change
+
+### Commit Examples
+
+**Simple commit:**
+```bash
+git commit -m "feat(trade): add coupon support to order placement"
+```
+
+**Detailed commit:**
+```bash
+git commit -m "feat(trade): add coupon support to order placement
+
+- Add coupon validation in PlaceOrder method
+- Calculate discount amount based on coupon rules
+- Update order total amount after applying coupon
+- Add unit tests for coupon validation
+
+Closes #123"
+```
+
+**Test commit:**
+```bash
+git commit -m "test(trade): add integration tests for order placement
+
+- Add integration tests for PlaceOrder method
+- Test order creation with multiple courses
+- Test order creation with coupons
+- Test error handling scenarios
+
+Refs #789"
+```
+
+### Commit Rules
+
+1. **One change per commit** - Don't mix unrelated changes
+2. **Commit frequently** - Commit after completing a small feature
+3. **Run tests before commit** - Ensure all tests pass
+4. **Follow commit message format** - Use Conventional Commits format
+
+## Step 4: Push Branch
+
+```bash
+# First push, set upstream
+git push -u origin feat/order-coupon-support
+
+# Subsequent pushes
+git push
+```
+
+## Step 5: Create Pull Request
+
+1. **Create PR on GitHub/GitLab**
+   - Use PR template (`.github/pull_request_template.md`)
+   - Fill all relevant information
+   - Link related issues
+
+2. **PR Title Format**
+   - Use same format as commit message
+   - Example: `feat(trade): add coupon support to order placement`
+
+3. **PR Description**
+   - Use PR template
+   - Describe changes in detail
+   - Explain testing
+   - Link related issues
+
+## Git Workflow Checklist
+
+For EVERY code change, verify:
+
+**Branch Creation:**
+- [ ] Switched to main branch: `git checkout main`
+- [ ] Pulled latest code: `git pull origin main`
+- [ ] Created new branch: `git checkout -b <type>/<description>`
+- [ ] Branch name follows convention
+
+**Development:**
+- [ ] Followed TDD workflow
+- [ ] All tests pass
+- [ ] Documentation updated
+
+**Commit:**
+- [ ] Commit message follows format: `<type>(<scope>): <subject>`
+- [ ] One change per commit
+- [ ] Commit message is clear and descriptive
+
+**Push and PR:**
+- [ ] Pushed branch to remote: `git push -u origin <branch-name>`
+- [ ] Created Pull Request
+- [ ] Filled PR template
+- [ ] Linked related issues
+
+## Important Git Rules
+
+1. **NEVER commit directly to main/master** - Always use branches
+2. **NEVER force push to shared branches** - Use `--force-with-lease` if needed
+3. **NEVER commit sensitive information** - Use `.gitignore`
+4. **ALWAYS create new branch** - For each change
+5. **ALWAYS follow commit message format** - Conventional Commits
+6. **ALWAYS create PR** - Before merging to main
+
+## When AI Generates Code
+
+When using AI to generate code, AI should:
+
+1. **First**: Check current branch
+   ```bash
+   git branch
+   ```
+
+2. **If on main**: Create new branch
+   ```bash
+   git checkout -b feat/feature-name
+   ```
+
+3. **After changes**: Commit with proper format
+   ```bash
+   git add .
+   git commit -m "feat(scope): description"
+   ```
+
+4. **Finally**: Remind user to push and create PR
+   ```bash
+   git push -u origin feat/feature-name
+   ```
+
+## Example Git Workflow with AI
+
+```
+User: "Add a method to cancel an order"
+
+AI should:
+1. Check current branch: git branch
+2. If on main, create branch: git checkout -b feat/order-cancel
+3. Generate code following TDD workflow
+4. After code is ready:
+   git add .
+   git commit -m "feat(trade): add cancel order method
+
+   - Add CancelOrder method to TradeService
+   - Implement order status validation
+   - Add unit tests for cancel order
+   - Update API documentation
+
+   Closes #123"
+5. Remind user: "Please push the branch and create a PR:
+   git push -u origin feat/order-cancel"
+```

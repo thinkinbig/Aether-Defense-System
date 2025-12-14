@@ -2,7 +2,8 @@ package rpc
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // UserService user service struct
@@ -14,7 +15,7 @@ func (s *UserService) GetUser(ctx context.Context, req *GetUserRequest) (*GetUse
 	// 1. Query database to get user information
 	// 2. Return user information
 	
-	fmt.Printf("Getting information for user ID=%d\n", req.UserId)
+	logx.WithContext(ctx).Infof("Getting information for user ID=%d", req.UserId)
 	
 	return &GetUserResponse{
 		UserId:   req.UserId,

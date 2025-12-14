@@ -1,0 +1,40 @@
+# Code Style and Best Practices
+
+## Naming Conventions
+- Packages: lowercase, single word when possible
+- Types: PascalCase (e.g., `TradeService`, `PlaceOrderRequest`)
+- Functions/Methods: PascalCase for exported, camelCase for unexported
+- Variables: camelCase
+- Constants: PascalCase for exported, camelCase for unexported
+- Private fields: camelCase with leading lowercase
+
+## Error Handling
+- ALWAYS check and handle errors
+- Use `fmt.Errorf` with `%w` for error wrapping
+- Log errors with sufficient context (request ID, user ID, etc.)
+- Return errors early (fail fast principle)
+
+## Logging
+- NEVER use `fmt.Printf` for production logging
+- Use structured logging (zerolog or zap)
+- Include context: request ID, user ID, operation name
+- Log levels: Debug, Info, Warn, Error
+- Example:
+```go
+logx.WithContext(ctx).Infof("Processing order: orderId=%d, userId=%d", orderId, userId)
+```
+
+## Concurrency
+- Use `context.Context` for cancellation and timeouts
+- Avoid creating unbounded goroutines
+- Use worker pools for concurrent processing
+- Always handle goroutine panics
+- Use channels for communication, mutexes for shared state protection
+
+## Performance Optimization
+- Use `sync.Pool` for object reuse in hot paths
+- Avoid reflection in performance-critical code
+- Prefer `json-iterator` or Protobuf over standard `encoding/json`
+- Minimize memory allocations in hot paths
+- Redis Lua scripts MUST execute in < 0.5ms
+- Avoid unnecessary type conversions

@@ -1,0 +1,255 @@
+# Development Workflow (MANDATORY)
+
+## Complete Workflow - Follow This Process for EVERY Code Change
+
+When making ANY code modification, you MUST follow this exact workflow:
+
+```
+1. Create New Branch (from main/master)
+   ↓
+2. Switch to New Branch
+   ↓
+3. Write Tests First (TDD)
+   ↓
+4. Implement Code
+   ↓
+5. Run All Tests & Verify They Pass
+   ↓
+6. Update Documentation
+   ↓
+7. Commit Changes (follow commit format)
+   ↓
+8. Push Branch to Remote
+   ↓
+9. Create Pull Request
+   ↓
+10. Code Review & Merge
+```
+
+## Git Workflow First
+
+**BEFORE making any code changes:**
+1. Check current branch: `git branch`
+2. If on main/master, create new branch: `git checkout -b <type>/<description>`
+3. Verify branch: `git branch` (should show * <branch-name>)
+
+## Step 1: Test-Driven Development (TDD)
+
+**ALWAYS write tests BEFORE implementing code.**
+
+### TDD Cycle (Red-Green-Refactor)
+
+1. **Red**: Write a failing test that describes the desired behavior
+   ```go
+   func TestTradeService_PlaceOrder(t *testing.T) {
+       // Test should fail initially (function doesn't exist yet)
+       req := &PlaceOrderRequest{UserId: 123, CourseIds: []int64{1, 2}}
+       resp, err := service.PlaceOrder(ctx, req)
+       assert.NoError(t, err)
+       assert.NotNil(t, resp)
+   }
+   ```
+
+2. **Green**: Implement minimal code to make the test pass
+   ```go
+   func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (*PlaceOrderResponse, error) {
+       // Minimal implementation to pass the test
+       return &PlaceOrderResponse{OrderId: 1}, nil
+   }
+   ```
+
+3. **Refactor**: Improve code quality while keeping tests passing
+   ```go
+   func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (*PlaceOrderResponse, error) {
+       // Refactored implementation with proper validation and error handling
+       if err := s.validateRequest(req); err != nil {
+           return nil, err
+       }
+       // ... proper implementation
+   }
+   ```
+
+### Test Requirements
+
+- Write unit tests for ALL business logic
+- Use `testify/assert` for assertions
+- Follow Arrange-Act-Assert pattern
+- Test both success and error cases
+- Test edge cases and boundary conditions
+
+## Step 2: Implement Code
+
+After writing tests, implement the functionality:
+
+- Follow project coding standards
+- Use structured logging (logx)
+- Handle all errors properly
+- Add inline comments for complex logic
+
+## Step 3: Run All Tests (MANDATORY)
+
+**Before proceeding, you MUST run ALL tests and ensure they pass:**
+
+```bash
+# Run all tests
+go test ./...
+
+# Run tests with race detection
+go test -race ./...
+
+# Run tests with coverage
+go test -cover ./...
+```
+
+### Test Requirements
+
+- ✅ ALL tests MUST pass - no exceptions
+- ✅ Test coverage for core business logic should be > 80%
+- ✅ Run race detector to catch concurrency issues
+- ✅ Fix any failing tests before proceeding
+
+### If Tests Fail
+
+1. Analyze the failure (check test output and logs)
+2. Fix the code or test
+3. Re-run all tests
+4. Verify no regressions were introduced
+
+## Step 4: Update Documentation (MANDATORY)
+
+**After tests pass, you MUST update relevant documentation:**
+
+### Documentation Checklist
+
+- [ ] **API Documentation**: Update `@doc` annotations in `.api` files if API changed
+- [ ] **Code Comments**: Update Go doc comments for exported functions/methods
+- [ ] **Architecture Docs**: Update `doc/design/` if architecture changed
+- [ ] **README**: Update if new features or setup steps added
+- [ ] **Inline Comments**: Add comments for complex algorithms
+
+### API Documentation Example
+
+```go
+@server(
+    group: order
+    prefix: /v1/trade/order
+    jwt: Auth
+)
+service trade-api {
+    @doc "用户下单接口，支持多课程和优惠券组合购买。订单创建后进入待支付状态。"
+    @handler PlaceOrder
+    post /place (PlaceOrderReq) returns (PlaceOrderResp)
+}
+```
+
+### Code Documentation Example
+
+```go
+// PlaceOrder creates a new order for the user.
+// It validates the request, calculates the total amount including discounts,
+// and creates the order in the database.
+//
+// Parameters:
+//   - ctx: Context for cancellation and timeout
+//   - req: Order creation request containing course IDs and optional coupon IDs
+//
+// Returns:
+//   - OrderResponse with order ID, payment amount, and status
+//   - error if validation fails or order creation fails
+func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (*PlaceOrderResponse, error) {
+    // ...
+}
+```
+
+## Step 5: Pre-Commit Checks
+
+Before committing, run these checks:
+
+```bash
+# 1. Format code
+go fmt ./...
+goimports -w .
+
+# 2. Run linter
+golangci-lint run
+
+# 3. Run all tests
+go test ./...
+
+# 4. Run pre-commit hooks
+pre-commit run --all-files
+```
+
+## Development Workflow Checklist
+
+For EVERY code change, verify:
+
+**Development Phase:**
+- [ ] Tests written first (TDD)
+- [ ] Code implemented
+- [ ] Code follows project standards
+
+**Testing Phase:**
+- [ ] All tests run: `go test ./...`
+- [ ] All tests pass
+- [ ] Race detection run: `go test -race ./...`
+- [ ] Test coverage checked
+
+**Documentation Phase:**
+- [ ] API docs updated (if applicable)
+- [ ] Code comments updated
+- [ ] Architecture docs updated (if applicable)
+- [ ] README updated (if applicable)
+
+**Commit Phase:**
+- [ ] Created new branch (from main/master)
+- [ ] Branch name follows convention: `<type>/<description>`
+- [ ] Linter passes: `golangci-lint run`
+- [ ] Pre-commit hooks pass
+- [ ] Commit message follows format: `<type>(<scope>): <subject>`
+- [ ] Pushed branch to remote: `git push -u origin <branch-name>`
+- [ ] Created Pull Request
+- [ ] Filled PR template
+- [ ] PR checklist completed
+
+## Important Rules
+
+1. **NEVER skip tests** - All code changes must have tests
+2. **NEVER commit failing tests** - Fix tests or code before committing
+3. **NEVER skip documentation** - Documentation must be updated with code
+4. **ALWAYS run all tests** - Not just the tests you wrote
+5. **ALWAYS verify tests pass** - Before moving to documentation phase
+
+## When AI Generates Code
+
+When using AI to generate code:
+
+1. **First**: Ask AI to generate tests for the feature
+2. **Second**: Review and adjust tests
+3. **Third**: Ask AI to generate implementation
+4. **Fourth**: Run all tests and fix any failures
+5. **Fifth**: Update documentation
+6. **Finally**: Run pre-commit checks
+
+## Example Workflow with AI
+
+```
+User: "Add a method to cancel an order"
+
+AI should:
+1. Generate test cases first:
+   - TestCancelOrder_Success
+   - TestCancelOrder_NotFound
+   - TestCancelOrder_AlreadyPaid
+   
+2. Generate minimal implementation to pass tests
+
+3. User runs: go test ./...
+
+4. If tests pass, AI updates:
+   - API documentation
+   - Code comments
+   - Architecture docs (if needed)
+
+5. User runs: golangci-lint run && pre-commit run
+```

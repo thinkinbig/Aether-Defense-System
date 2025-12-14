@@ -1,0 +1,23 @@
+# Aether-Defense-System Coding Standards - Overview
+
+## Project Overview
+This is a high-concurrency microservices system built with Go-Zero framework, handling trading, promotion, and user services. The system must support 40,000 QPS peak traffic with P99 latency < 100ms and 99.99% availability.
+
+## Technology Stack
+- Framework: Go-Zero (microservices framework)
+- Language: Go 1.21+
+- Communication: gRPC for inter-service communication
+- Storage: MySQL (with sharding), Redis (caching and atomic operations)
+- Message Queue: RocketMQ (transactional messages)
+- Service Discovery: Etcd
+
+## Critical Rules Summary
+
+1. **ALWAYS create new branch** before making changes
+2. **ALWAYS follow TDD** - Write tests first
+3. **ALWAYS run all tests** before committing
+4. **ALWAYS update documentation** with code changes
+5. **ALWAYS create PR** for code review
+6. **NEVER commit directly to main/master**
+7. **NEVER skip tests**
+8. **NEVER skip documentation**

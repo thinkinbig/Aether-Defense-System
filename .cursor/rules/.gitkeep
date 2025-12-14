@@ -1,0 +1,18 @@
+# Cursor Rules Directory
+
+This directory contains Cursor AI rules files (.mdc format).
+
+Cursor automatically reads all .mdc files in this directory in alphabetical order.
+
+## File Organization
+
+- `00-overview.mdc` - Project overview and critical rules
+- `01-project-structure.mdc` - Project structure conventions
+- `02-go-zero-conventions.mdc` - Go-Zero framework conventions
+- `03-code-style.mdc` - Code style and best practices
+- `04-architecture.mdc` - Architecture rules
+- `05-requirements.mdc` - Testing, documentation, and security requirements
+- `06-development-workflow.mdc` - Development workflow (TDD)
+- `07-code-review.mdc` - Code review requirements
+- `08-git-workflow.mdc` - Git workflow and commit standards
+- `09-code-explanation.mdc` - Code explanation standards (design purpose, git history, module relationships, global role)

@@ -1,0 +1,40 @@
+# Testing, Documentation, and Security Requirements
+
+## Code Review Checklist
+
+Before submitting code, ensure:
+1. ✅ Tests written first (TDD workflow followed)
+2. ✅ All tests pass (run `go test ./...`)
+3. ✅ Documentation updated (API docs, code comments)
+4. ✅ All APIs defined in `.api` files with `@doc` annotations
+5. ✅ No `fmt.Printf` - using structured logging
+6. ✅ All errors are handled and logged
+7. ✅ Context is passed through all function calls
+8. ✅ No direct database access across services
+9. ✅ Redis keys have expiration times
+10. ✅ Lua scripts are optimized (< 0.5ms execution)
+11. ✅ ID generation uses Snowflake algorithm
+12. ✅ Proper error codes are used
+13. ✅ Code follows naming conventions
+14. ✅ Linter passes (`golangci-lint run`)
+15. ✅ Pre-commit hooks pass
+
+## Testing Requirements
+- Unit tests for business logic
+- Integration tests for service interactions
+- Performance tests for critical paths (Lua scripts, hot paths)
+- Load tests to verify QPS and latency targets
+
+## Documentation Requirements
+- All exported functions MUST have Go doc comments
+- Complex algorithms MUST have inline comments
+- API endpoints MUST have `@doc` annotations
+- Architecture decisions MUST be documented in `doc/design/`
+
+## Security
+- NEVER trust client input - validate all inputs
+- Use JWT for authentication, extract user_id from token
+- Sanitize all database inputs to prevent SQL injection
+- Use parameterized queries
+- Rate limit all public endpoints
+- Log security events (authentication failures, suspicious activities)

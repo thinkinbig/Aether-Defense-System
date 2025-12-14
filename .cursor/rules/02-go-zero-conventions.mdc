@@ -1,0 +1,36 @@
+# Go-Zero Framework Conventions
+
+## API Definition Files (.api)
+- All HTTP APIs MUST be defined in `.api` files
+- Use `@server` block for middleware configuration
+- Use `@doc` annotation for API documentation
+- JWT authentication: Use `jwt: Auth` in `@server` block
+- NEVER pass `user_id` in request body - extract from JWT token
+- Use type definitions for request/response DTOs
+- Use tag validation: `optional`, `range`, `options` for input validation
+
+Example:
+```go
+@server(
+    group: order
+    prefix: /v1/trade/order
+    jwt: Auth
+)
+service trade-api {
+    @doc "User Place Order Interface"
+    @handler PlaceOrder
+    post /place (PlaceOrderReq) returns (PlaceOrderResp)
+}
+```
+
+## gRPC Service Definition (.proto)
+- Define all RPC methods in `.proto` files
+- Use meaningful service and method names
+- Include proper comments for each field
+- Use appropriate field numbers (don't reuse deleted field numbers)
+
+## Error Handling
+- Use Go-Zero's error code system
+- Define error codes in a centralized location
+- Return structured errors, not plain strings
+- Log errors with context before returning

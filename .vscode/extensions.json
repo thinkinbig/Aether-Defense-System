@@ -1,0 +1,15 @@
+{
+  "recommendations": [
+    // Go language support (includes golangci-lint support via go.lintTool setting)
+    "golang.go",
+    // YAML support
+    "redhat.vscode-yaml",
+    // JSON support
+    "ms-vscode.vscode-json",
+    // Markdown support
+    "yzhang.markdown-all-in-one",
+    // Git support
+    "eamodio.gitlens"
+  ],
+  "unwantedRecommendations": []
+}
