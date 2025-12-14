@@ -2,7 +2,8 @@ package rpc
 
 import (
 	"context"
-	"fmt"
+
+	"github.com/zeromicro/go-zero/core/logx"
 )
 
 // PromotionService marketing service struct
@@ -14,7 +15,7 @@ func (s *PromotionService) DecrStock(ctx context.Context, req *DecrStockRequest)
 	// 1. Call Redis Lua script to perform atomic inventory deduction
 	// 2. Return execution result
 	
-	fmt.Printf("Deducting inventory for course ID=%d, quantity=%d\n", req.CourseId, req.Num)
+	logx.WithContext(ctx).Infof("Deducting inventory for course ID=%d, quantity=%d", req.CourseId, req.Num)
 	
 	return &DecrStockResponse{
 		Success: true,

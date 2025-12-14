@@ -1,0 +1,113 @@
+{
+  // ============================================
+  // Go Language Configuration
+  // ============================================
+  // Go language server (gopls) is enabled by default in newer Go extension
+  // Go tool settings
+  "go.toolsManagement.checkForUpdates": "local",
+  "go.installTools": true,
+  // Enable gopls diagnostics
+  "gopls": {
+    "build.directoryFilters": [
+      "-node_modules",
+      "-vendor"
+    ],
+    "ui.diagnostic.analyses": {
+      "unusedparams": true,
+      "unusedwrite": true,
+      "useany": true
+    },
+    "ui.diagnostic.staticcheck": true,
+    "ui.completion.usePlaceholders": true
+  },
+  
+  // Explicitly enable language server for diagnostics
+  "go.languageServerExperimentalFeatures": {
+    "diagnostics": true
+  },
+  // Format on save
+  "go.formatTool": "goimports",
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.organizeImports": "explicit"
+  },
+  // Lint on save - use golangci-lint
+  "go.lintTool": "golangci-lint",
+  "go.lintOnSave": "workspace",
+  "go.lintFlags": [
+    "--config=.golangci.yml",
+    "--timeout=5m"
+  ],
+  // Build and test settings
+  "go.buildOnSave": "off",
+  "go.testOnSave": false,
+  "go.coverOnSave": false,
+  // ============================================
+  // golangci-lint Integration
+  // ============================================
+  // Enable golangci-lint diagnostics
+  "golangci-lint.enable": true,
+  "golangci-lint.config": ".golangci.yml",
+  "golangci-lint.timeout": "5m",
+  // ============================================
+  // Editor Settings
+  // ============================================
+  // File associations
+  "files.associations": {
+    "*.api": "go",
+    "*.proto": "protobuf"
+  },
+  // Exclude patterns
+  "files.exclude": {
+    "**/.git": true,
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/*.pb.go": false, // Show generated files but don't lint them
+    "**/_gen.go": false
+  },
+  // Search exclude patterns
+  "search.exclude": {
+    "**/node_modules": true,
+    "**/vendor": true,
+    "**/go.sum": true,
+    "**/*.pb.go": false,
+    "**/_gen.go": false
+  },
+  // ============================================
+  // Code Style
+  // ============================================
+  // Tab and indentation
+  "[go]": {
+    "editor.tabSize": 4,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
+    },
+    "editor.defaultFormatter": "golang.go"
+  },
+  "[yaml]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": false
+  },
+  "[markdown]": {
+    "editor.tabSize": 2,
+    "editor.insertSpaces": true,
+    "editor.formatOnSave": true,
+    "editor.wordWrap": "on"
+  },
+  // ============================================
+  // Diagnostics
+  // ============================================
+  // Show diagnostics for all files
+  "diagnostics.showInStatusBar": "on",
+  // ============================================
+  // Extensions Recommendations
+  // ============================================
+  // These extensions will be recommended to users
+  "extensions.recommendations": [
+    "golang.go",
+    "ms-vscode.vscode-json"
+  ]
+}

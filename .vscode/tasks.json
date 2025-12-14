@@ -1,0 +1,98 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "golangci-lint: Run",
+      "type": "shell",
+      "command": "golangci-lint",
+      "args": [
+        "run",
+        "--config=.golangci.yml",
+        "--timeout=5m"
+      ],
+      "problemMatcher": [
+        "$golangci-lint"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": false
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "golangci-lint: Fix",
+      "type": "shell",
+      "command": "golangci-lint",
+      "args": [
+        "run",
+        "--fix",
+        "--config=.golangci.yml",
+        "--timeout=5m"
+      ],
+      "problemMatcher": [
+        "$golangci-lint"
+      ],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "go: mod tidy",
+      "type": "shell",
+      "command": "go",
+      "args": [
+        "mod",
+        "tidy"
+      ],
+      "problemMatcher": [],
+      "group": "build",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "go: test",
+      "type": "shell",
+      "command": "go",
+      "args": [
+        "test",
+        "./...",
+        "-v",
+        "-race",
+        "-short"
+      ],
+      "problemMatcher": [
+        "$go"
+      ],
+      "group": {
+        "kind": "test",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    },
+    {
+      "label": "pre-commit: Run all",
+      "type": "shell",
+      "command": "pre-commit",
+      "args": [
+        "run",
+        "--all-files"
+      ],
+      "problemMatcher": [],
+      "group": "test",
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      }
+    }
+  ]
+}

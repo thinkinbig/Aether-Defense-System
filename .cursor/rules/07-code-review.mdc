@@ -1,0 +1,68 @@
+# Code Review Requirements
+
+## Before Creating PR
+
+Before creating a Pull Request, ensure ALL of the following:
+
+1. **TDD Workflow Completed**
+   - Tests written first
+   - All tests pass
+   - Documentation updated
+
+2. **Code Quality Checks**
+   - `golangci-lint run` passes
+   - `go test ./...` passes
+   - `pre-commit run --all-files` passes
+
+3. **PR Template Filled**
+   - Use the PR template from `.github/pull_request_template.md`
+   - Fill all relevant checkboxes
+   - Provide clear description of changes
+
+## Code Review Focus Areas
+
+When reviewing code, pay special attention to:
+
+### 1. Performance (Critical for High-Concurrency System)
+- Redis Lua scripts execution time < 0.5ms
+- No memory leaks
+- Proper resource cleanup
+- Concurrent safety (race conditions)
+- Hot path optimization
+
+### 2. Architecture Compliance
+- No direct database access across services
+- Services communicate via gRPC only
+- Proper use of Snowflake ID generation
+- Correct sharding key selection
+- Transaction handling (local vs distributed)
+
+### 3. Security
+- Input validation
+- SQL injection prevention (parameterized queries)
+- Authentication and authorization
+- No sensitive data in logs
+- Dependency security
+
+### 4. Testing
+- Test coverage > 80% for core business logic
+- Tests cover normal and error cases
+- Integration tests for service interactions
+- Performance tests for critical paths
+
+### 5. Documentation
+- API documentation updated
+- Code comments for complex logic
+- Architecture docs updated (if applicable)
+
+## Code Review Checklist for AI
+
+When AI generates code for review, ensure:
+
+- [ ] Code follows TDD workflow (tests written first)
+- [ ] All tests pass
+- [ ] Code follows project standards
+- [ ] Performance requirements met
+- [ ] Security best practices followed
+- [ ] Documentation updated
+- [ ] Ready for human review

@@ -1,0 +1,33 @@
+# Architecture Rules
+
+## Service Layer Separation
+- API Layer (`cmd/api/*`): Protocol conversion, aggregation, authentication
+- RPC Layer (`service/*/rpc`): Core business logic, domain services
+- NO direct database access across service boundaries
+- Services communicate ONLY via gRPC
+
+## Data Access
+- ID Generation: ALWAYS use Snowflake algorithm from `common/snowflake`
+- Database Sharding: Prefer `user_id` as sharding key
+- Transactions:
+  - Local transactions: Use database transactions
+  - Distributed transactions: Use RocketMQ transactional messages
+  - NEVER use Seata (performance concerns)
+
+## Redis Usage
+- Key naming: `{domain}:{resource}:{id}` (e.g., `promotion:stock:123`)
+- ALWAYS set expiration time for keys
+- Lua scripts: Keep execution time < 0.5ms
+- Use atomic operations (Lua scripts) for critical operations
+
+## Message Queue
+- Use RocketMQ transactional messages for distributed transactions
+- MUST implement check-back interface (stateless and efficient)
+- Message format: Use Protobuf
+- Consumer MUST be idempotent (implement deduplication)
+
+## High Concurrency Patterns
+- Rate limiting: Use Sentinel-Go, QPS threshold: 2,500 per Pod
+- Circuit breaking: Trigger when slow call ratio > 50%, duration: 5 seconds
+- Monitoring: MUST expose Prometheus metrics
+- Graceful degradation: Return "queued" status during peak traffic

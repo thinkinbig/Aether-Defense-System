@@ -1,0 +1,24 @@
+# Project Structure Conventions
+
+## Service Naming
+- Format: `{domain}-{type}` (e.g., `trade-rpc`, `promotion-api`, `user-rpc`)
+- API services: `cmd/api/{domain}-api/`
+- RPC services: `cmd/rpc/{domain}-rpc/`
+- Service implementations: `service/{domain}/rpc/`
+
+## Directory Structure
+```
+cmd/
+  api/          # HTTP API services (BFF layer)
+  rpc/          # gRPC services (business logic layer)
+service/        # Domain services implementation
+  {domain}/
+    rpc/        # RPC service implementation
+common/         # Shared utilities
+  middleware/   # Common middleware
+  mq/          # Message queue utilities
+  snowflake/   # ID generation
+doc/           # Documentation
+  design/      # Architecture design docs
+  coding-standards/  # Coding standards
+```
