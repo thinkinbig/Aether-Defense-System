@@ -170,8 +170,10 @@ Before committing, run these checks:
 go fmt ./...
 goimports -w .
 
-# 2. Run linter
+# 2. Run linter and FIX ALL ERRORS (MANDATORY)
 golangci-lint run
+# If there are errors, fix them before proceeding
+# Warnings are acceptable, but errors must be fixed
 
 # 3. Run all tests
 go test ./...
@@ -179,6 +181,21 @@ go test ./...
 # 4. Run pre-commit hooks
 pre-commit run --all-files
 ```
+
+### Linter Error Policy
+
+**MANDATORY**: All linter **errors** must be fixed before committing code.
+
+- ✅ **Errors**: Must be fixed - code will not compile or has serious issues
+- ⚠️ **Warnings**: Can be addressed later, but should be fixed when possible
+- ❌ **Never commit code with linter errors**
+
+Common linter errors to fix:
+- Import path errors
+- Type mismatches
+- Unused variables/imports
+- Missing package comments
+- Incorrect function comment formats
 
 ## Development Workflow Checklist
 
@@ -204,7 +221,8 @@ For EVERY code change, verify:
 **Commit Phase:**
 - [ ] Created new branch (from main/master)
 - [ ] Branch name follows convention: `<type>/<description>`
-- [ ] Linter passes: `golangci-lint run`
+- [ ] **ALL linter errors fixed** - Run `golangci-lint run` and fix ALL errors before committing
+- [ ] Linter passes: `golangci-lint run` (no errors, warnings are acceptable)
 - [ ] Pre-commit hooks pass
 - [ ] Commit message follows format: `<type>(<scope>): <subject>`
 - [ ] Pushed branch to remote: `git push -u origin <branch-name>`
@@ -217,8 +235,10 @@ For EVERY code change, verify:
 1. **NEVER skip tests** - All code changes must have tests
 2. **NEVER commit failing tests** - Fix tests or code before committing
 3. **NEVER skip documentation** - Documentation must be updated with code
-4. **ALWAYS run all tests** - Not just the tests you wrote
-5. **ALWAYS verify tests pass** - Before moving to documentation phase
+4. **NEVER commit linter errors** - Fix ALL linter errors before committing
+5. **ALWAYS run all tests** - Not just the tests you wrote
+6. **ALWAYS verify tests pass** - Before moving to documentation phase
+7. **ALWAYS fix linter errors** - Run `golangci-lint run` and fix all errors before committing
 
 ## When AI Generates Code
 

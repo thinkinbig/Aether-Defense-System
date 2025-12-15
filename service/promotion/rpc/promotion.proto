@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package promotion;
 
+option go_package = "github.com/aether-defense-system/service/promotion/rpc";
+
 // Request Parameters
 message DecrStockRequest {
   int64 courseId = 1;      // Course ID
