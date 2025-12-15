@@ -44,10 +44,10 @@ func TestTradeService_PlaceOrder(t *testing.T) {
         CourseIds: []int64{1, 2, 3},
         CouponIds: []int64{10},
     }
-    
+
     // Act: 执行被测试的方法
     resp, err := service.PlaceOrder(ctx, req)
-    
+
     // Assert: 验证结果
     assert.NoError(t, err)
     assert.NotNil(t, resp)
@@ -92,13 +92,13 @@ func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (
     if err := s.validateRequest(req); err != nil {
         return nil, err
     }
-    
+
     // 2. 业务逻辑
     orderId, err := s.createOrder(ctx, req)
     if err != nil {
         return nil, err
     }
-    
+
     // 3. 返回结果
     return &PlaceOrderResponse{
         OrderId:   orderId,
@@ -243,6 +243,7 @@ goimports -w .
 ```
 
 **类型（type）**：
+
 - `feat`: 新功能
 - `fix`: 修复 bug
 - `docs`: 文档更新
@@ -252,6 +253,7 @@ goimports -w .
 - `chore`: 构建/工具相关
 
 **示例**：
+
 ```
 feat(trade): add order placement with coupon support
 
@@ -302,15 +304,15 @@ jobs:
       - uses: actions/setup-go@v4
         with:
           go-version: '1.21'
-      
+
       - name: Run tests
         run: go test -race -coverprofile=coverage.out ./...
-      
+
       - name: Upload coverage
         uses: codecov/codecov-action@v3
         with:
           file: ./coverage.out
-      
+
       - name: Run linter
         uses: golangci/golangci-lint-action@v3
         with:
@@ -322,23 +324,27 @@ jobs:
 每次代码修改时，使用以下检查清单：
 
 ### 开发阶段
+
 - [ ] 编写测试用例（TDD）
 - [ ] 实现功能代码
 - [ ] 代码符合项目规范
 
 ### 测试阶段
+
 - [ ] 运行所有测试：`go test ./...`
 - [ ] 所有测试通过
 - [ ] 测试覆盖率满足要求（> 80%）
 - [ ] 运行竞态检测：`go test -race ./...`
 
 ### 文档阶段
+
 - [ ] 更新 API 文档（如适用）
 - [ ] 更新代码注释
 - [ ] 更新架构文档（如适用）
 - [ ] 更新 README（如适用）
 
 ### 提交阶段
+
 - [ ] 运行 lint 检查：`golangci-lint run`
 - [ ] 运行 pre-commit hooks
 - [ ] 提交信息符合规范
@@ -380,28 +386,32 @@ jobs:
 
 ### Q: 如果测试运行时间太长怎么办？
 
-A: 
+A:
+
 1. 优化测试，减少不必要的等待
 2. 使用测试并行执行：`go test -parallel 4 ./...`
 3. 将慢测试标记为集成测试，单独运行
 
 ### Q: 如何确保文档不遗漏？
 
-A: 
+A:
+
 1. 使用 PR 模板，包含文档检查项
 2. 在 CI 中检查文档更新
 3. 代码审查时检查文档
 
 ### Q: 测试覆盖率要求是多少？
 
-A: 
+A:
+
 - 核心业务逻辑：> 80%
 - 工具函数：> 90%
 - 简单 getter/setter：可适当降低
 
 ### Q: 什么时候可以跳过测试？
 
-A: 
+A:
+
 - **永远不要跳过测试**
 - 如果测试失败，修复代码或测试
 - 如果测试过时，更新测试而不是删除
@@ -412,4 +422,3 @@ A:
 - [TDD 最佳实践](https://www.thoughtworks.com/insights/blog/test-driven-development)
 - [项目代码规范](./README.md)
 - [Go-Zero 约定](./go-zero-conventions.md)
-

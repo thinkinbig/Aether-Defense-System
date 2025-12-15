@@ -136,6 +136,7 @@ pre-commit run golangci-lint
 ### `.cursor/rules/coding-standards.mdc`
 
 AI 辅助开发的规范文件（Cursor 专用），位于 `.cursor/rules/` 目录下，包含：
+
 - 项目结构约定
 - Go-Zero 框架使用规范
 - 代码风格和最佳实践
@@ -146,6 +147,7 @@ AI 辅助开发的规范文件（Cursor 专用），位于 `.cursor/rules/` 目�
 ### `.golangci.yml`
 
 golangci-lint 配置文件，包含：
+
 - 启用的 linter 列表
 - Linter 特定配置
 - 排除规则
@@ -154,6 +156,7 @@ golangci-lint 配置文件，包含：
 ### `.pre-commit-config.yaml`
 
 pre-commit hooks 配置，包含：
+
 - 文件格式检查（YAML, JSON, TOML）
 - Go 代码格式化（gofmt, goimports）
 - Go 代码检查（go-vet, go-lint）
@@ -176,23 +179,27 @@ issues:
 
 ### Q: 如何添加新的代码规范？
 
-A: 
+A:
+
 1. 更新 `.cursor/rules/coding-standards.mdc` 文件（AI 辅助规范）
 2. 更新相应的文档（`doc/coding-standards/` 目录）
 3. 如需要，更新 `.golangci.yml` 配置
 
 ### Q: pre-commit hooks 运行太慢怎么办？
 
-A: 
+A:
+
 1. 只运行必要的 hooks
 2. 使用 `SKIP` 环境变量跳过特定 hook：
+
    ```bash
    SKIP=golangci-lint git commit -m "message"
    ```
 
 ### Q: 如何为现有代码应用规范？
 
-A: 
+A:
+
 1. 运行 `golangci-lint run --fix` 自动修复部分问题
 2. 逐步重构代码以符合规范
 3. 在新代码中严格遵循规范
@@ -212,4 +219,3 @@ A:
 2. 更新 `.cursorrules` 文件（如适用）
 3. 更新 `.golangci.yml` 配置（如适用）
 4. 提交 PR 并说明变更原因
-

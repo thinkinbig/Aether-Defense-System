@@ -7,7 +7,7 @@ type (
 		CouponIds  []int64  `json:"couponIds,optional"`   // Selected coupon IDs, optional
 		OrderId    int64   `json:"orderId"`             // Pre-generated order ID
 	}
-	
+
 	// Place Order Response
 	PlaceOrderResp {
 		OrderId     int64  `json:"orderId"`     // Returned order number

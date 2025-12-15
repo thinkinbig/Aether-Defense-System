@@ -1,0 +1,113 @@
+# AI Tools and Workflow (Project-Specific, Level-0)
+
+This document describes **how AI assistants should work in this repository**, which tools they may use, and important boundaries.
+
+## 1. General Principles
+
+- **Follow human rules first**: Before making changes, always respect:
+  - `06-development-workflow.mdc`
+  - `08-git-workflow.mdc`
+  - `10-testing-structure.mdc`
+  - `11-testing-strategy.mdc`
+- **Prefer existing project tooling** (scripts, configs, CI) over inventing new commands.
+- **Never perform destructive or irreversible actions** without explicit user confirmation.
+
+## 2. Local Tools and Commands (AI MAY Use)
+
+These commands are safe and encouraged for AI to run in this project (from repo root):
+
+- **Testing**
+  - `go test ./...`
+    - Run all Go unit tests.
+  - `go test -race ./...`
+    - Run tests with race detector (may be slower).
+  - **Logic-only coverage (preferred for coverage analysis):**
+    - Use the same approach as CI:
+      - Discover logic packages: `go list ./service/... | grep '/internal/logic$'`
+      - Build `-coverpkg` from those packages.
+      - Run:
+        ```bash
+        go test -race -short \
+          -coverprofile=coverage.out \
+          -covermode=atomic \
+          -coverpkg="${coverpkg}" \
+          $logic_pkgs
+        ```
+
+- **Linting and formatting**
+  - `golangci-lint run`
+    - Primary linter; all **errors** must be fixed before commit.
+  - `go fmt ./...` and `goimports -w .`
+    - Only when not already covered by pre-commit / editor.
+
+- **Pre-commit**
+  - `pre-commit run --all-files`
+    - Run all pre-commit hooks and auto-fix trivial issues.
+    - AI should fix any reported problems (when feasible) before committing.
+
+- **Coverage inspection**
+  - `go tool cover -func=coverage.out`
+  - `go tool cover -html=coverage.out -o coverage.html`
+    - For understanding coverage; **interpret results according to 10/11 testing rules** (focus on `internal/logic`).
+
+## 3. Git and Branch Workflow (AI MUST Follow)
+
+When AI is asked to help with commits:
+
+- **Branching**
+  - Never commit directly to `main`/`master`.
+  - Always:
+    - Check current branch: `git branch`
+    - If on main/master: `git checkout -b <type>/<description>`
+
+- **Before commit**
+  - Ensure this sequence has been run (by AI or user):
+    - `go test ./...`
+    - `golangci-lint run`
+    - `pre-commit run --all-files`
+
+- **Commit**
+  - Stage only relevant files, or use `git add .` when appropriate.
+  - Use conventional-style messages as per `08-git-workflow.mdc`.
+  - Never force-push or rewrite history without explicit user instruction.
+
+## 4. GitHub MCP (Remote Tools) – Intended Usage
+
+> Note: GitHub MCP is configured at project level in `.cursor/mcp.json`.
+> The AI **must treat it as read-only** even if the server technically supports more.
+
+- **Allowed (READ-ONLY) actions via GitHub MCP**
+  - List and read pull requests for this repository.
+  - Read PR details:
+    - Description
+    - Changed files
+    - Diffs
+    - Review comments
+  - Read GitHub Actions workflows:
+    - Recent runs and their statuses
+    - Logs for failing jobs to help diagnose CI issues.
+  - Read issues and discussions for context and design decisions.
+
+- **Forbidden actions via GitHub MCP**
+  - Merging or closing PRs.
+  - Pushing commits, editing branches, rebasing from remote.
+  - Modifying repository settings, workflows, or secrets.
+  - Triggering workflow re-runs or canceling runs.
+
+- **When AI should use GitHub MCP**
+  - When the user references a PR/issue and wants analysis or summary.
+  - When CI has failed on GitHub and logs are needed to debug, and the user hasn’t pasted them.
+  - When additional PR review context (comments, older commits) is needed to give good advice.
+
+- **When AI should NOT use GitHub MCP**
+  - For code that already exists locally in the workspace (prefer local files).
+  - For speculative exploration of unrelated repos.
+
+## 5. Safety and Scope
+
+- **Project scope only**
+  - AI must restrict GitHub MCP usage to this repository (`aether-defense-system/Aether-Defense-System`).
+- **Privacy**
+  - Do not expose token values or sensitive configuration in logs or messages.
+- **User override**
+  - If the user explicitly restricts certain tools (local or MCP) for a task, AI must respect that even if this document allows them.

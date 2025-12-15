@@ -31,6 +31,7 @@
 分支名称格式：`<type>/<description>`
 
 **类型（type）**：
+
 - `feat/` - 新功能
 - `fix/` - Bug 修复
 - `test/` - 测试相关
@@ -41,11 +42,13 @@
 - `hotfix/` - 紧急修复
 
 **描述（description）**：
+
 - 使用小写字母和连字符
 - 简洁描述功能或修复
 - 长度控制在 50 个字符以内
 
 **示例**：
+
 ```bash
 feat/order-coupon-support      # 订单支持优惠券功能
 fix/redis-connection-pool       # 修复 Redis 连接池问题
@@ -121,6 +124,7 @@ git status
 ### Conventional Commits 格式
 
 提交信息格式：
+
 ```
 <type>(<scope>): <subject>
 
@@ -144,6 +148,7 @@ git status
 ### 范围（Scope）
 
 可选，表示影响的范围，如：
+
 - `trade`: 交易服务
 - `promotion`: 营销服务
 - `user`: 用户服务
@@ -161,6 +166,7 @@ git status
 ### 正文（Body）
 
 可选，详细描述：
+
 - 变更的原因
 - 与之前行为的对比
 - 关闭的 Issue
@@ -168,6 +174,7 @@ git status
 ### 页脚（Footer）
 
 可选，用于：
+
 - 关闭 Issue: `Closes #123`
 - 关联 Issue: `Refs #456`
 - 破坏性变更: `BREAKING CHANGE: <description>`
@@ -200,6 +207,7 @@ git commit
 ```
 
 在编辑器中输入：
+
 ```
 feat(trade): add coupon support to order placement
 
@@ -222,14 +230,15 @@ Refs #456
    - 如果发现提交了不相关的内容，使用 `git reset` 重新提交
 
 2. **提交前检查**
+
    ```bash
    # 查看变更
    git status
    git diff
-   
+
    # 运行测试
    go test ./...
-   
+
    # 运行 lint
    golangci-lint run
    ```
@@ -435,18 +444,20 @@ git rebase -i HEAD~3
 ## 禁止的操作
 
 1. **禁止直接推送到主分支**
+
    ```bash
    # ❌ 错误
    git push origin main
-   
+
    # ✅ 正确：通过 PR 合并
    ```
 
 2. **禁止使用 `--force` 推送共享分支**
+
    ```bash
    # ❌ 错误
    git push --force origin feat/branch-name
-   
+
    # ✅ 正确：使用 --force-with-lease
    git push --force-with-lease origin feat/branch-name
    ```
@@ -489,4 +500,3 @@ git rebase -i HEAD~3
 - [GitHub Flow](https://guides.github.com/introduction/flow/)
 - [项目开发流程规范](./development-workflow.md)
 - [项目代码审查规范](./code-review-guidelines.md)
-

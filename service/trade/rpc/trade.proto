@@ -37,7 +37,7 @@ message CancelOrderResponse {
 service TradeService {
   // Place Order Interface
   rpc PlaceOrder(PlaceOrderRequest) returns (PlaceOrderResponse);
-  
+
   // Cancel Order Interface
   rpc CancelOrder(CancelOrderRequest) returns (CancelOrderResponse);
 }

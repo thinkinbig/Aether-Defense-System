@@ -21,3 +21,10 @@ This is a high-concurrency microservices system built with Go-Zero framework, ha
 6. **NEVER commit directly to main/master**
 7. **NEVER skip tests**
 8. **NEVER skip documentation**
+
+## AI Assistant Rules and Tools
+
+- See `00-ai-tools-and-workflow.mdc` for:
+  - What local tools/commands the AI may run (`go test`, `golangci-lint`, `pre-commit`, coverage commands, etc.)
+  - How the AI must follow the same development and git workflows as humans
+  - How the AI may use GitHub MCP (read-only PR/CI/issue access) within this project

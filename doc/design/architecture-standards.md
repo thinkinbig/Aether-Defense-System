@@ -87,6 +87,7 @@
 **位置**: `cmd/api/*`
 
 **职责**:
+
 - 协议转换（HTTP → gRPC）
 - 请求聚合（调用多个 RPC 服务）
 - 统一认证鉴权（JWT）
@@ -94,6 +95,7 @@
 - 请求路由
 
 **规范**:
+
 - 所有接口定义在 `.api` 文件中
 - 使用 JWT 中间件进行认证
 - 禁止在请求体中传递 `user_id`
@@ -104,12 +106,14 @@
 **位置**: `service/*/rpc`
 
 **职责**:
+
 - 核心业务逻辑
 - 领域服务实现
 - 数据访问
 - 服务间调用
 
 **规范**:
+
 - 服务间调用必须通过 gRPC
 - 禁止跨服务直接访问数据库
 - 使用 context 传递超时和取消信号
@@ -118,11 +122,13 @@
 #### 3. 数据层
 
 **职责**:
+
 - 数据持久化（MySQL）
 - 缓存管理（Redis）
 - 消息队列（RocketMQ）
 
 **规范**:
+
 - ID 生成使用 Snowflake 算法
 - 分库分表策略（优先 `user_id`）
 - Redis Key 命名规范
@@ -223,11 +229,13 @@ producer.SendMessageInTransaction(ctx, msg, func(ctx context.Context, msg *primi
 #### 1. 分库分表策略
 
 **分片键选择原则**:
+
 - 优先使用 `user_id`（80% 查询按用户）
 - 避免跨分片查询
 - 使用绑定表策略（父子表相同分片键）
 
 **分片算法**:
+
 ```go
 shardIndex = user_id % 32  // 32 个分片
 ```
@@ -244,6 +252,7 @@ orderId := idGenerator.Next()
 ```
 
 **Snowflake ID 结构**:
+
 - 1 bit: 符号位（始终为 0）
 - 41 bits: 时间戳（毫秒）
 - 10 bits: 机器 ID（1024 个节点）
@@ -252,6 +261,7 @@ orderId := idGenerator.Next()
 #### 3. 数据一致性
 
 **本地事务**:
+
 ```go
 tx, err := db.Begin()
 if err != nil {
@@ -268,6 +278,7 @@ return tx.Commit()
 ```
 
 **分布式事务**:
+
 - 使用 RocketMQ 事务消息
 - 实现最终一致性
 - 禁止使用 Seata（性能考虑）
@@ -333,6 +344,7 @@ end
 #### 2. 请求/响应格式
 
 **请求**:
+
 ```json
 {
   "courseIds": [1, 2, 3],
@@ -342,6 +354,7 @@ end
 ```
 
 **响应**:
+
 ```json
 {
   "code": 0,
@@ -390,6 +403,7 @@ end
 ```
 
 **Token 结构**:
+
 - Header: 算法类型
 - Payload: 用户信息（user_id, exp, iat）
 - Signature: 签名
@@ -517,4 +531,3 @@ spec:
 - [Go-Zero 约定](../coding-standards/go-zero-conventions.md)
 - [微服务设计规则](../coding-standards/service-design-rules.md)
 - [性能优化指南](../coding-standards/performance-guidelines.md)
-

@@ -24,21 +24,21 @@ linters-settings:
     check-type-assertions: true
     check-blank: true
     check-err-return: true
-  
+
   goconst:
     min-len: 3
     min-occurrences: 2
-  
+
   gofmt:
     simplify: true
-  
+
   goimports:
     local-prefixes: github.com/aether-defense-system
-  
+
   govet:
     check-shadowing: true
     enable-all: true
-  
+
   gosec:
     severity: medium
     confidence: medium
@@ -46,33 +46,33 @@ linters-settings:
       - G104  # Errors unhandled (we use errcheck)
       - G107  # Potential HTTP request made with variable url
       - G402  # TLS InsecureSkipVerify set true
-  
+
   misspell:
     locale: US
-  
+
   staticcheck:
     checks: ["all"]
-  
+
   unused:
     check-exported: false
-  
+
   unparam:
     check-exported: false
-  
+
   # godox disabled - TODO comments are acceptable during development
   # godox:
   #   keywords:
   #     - NOTE
   #     - OPTIMIZE
   #     - HACK
-  
+
   godot:
     scope: declarations
     exclude:
       - "^TODO:"
       - "^FIXME:"
       - "^BUG:"
-  
+
   gocritic:
     enabled-tags:
       - diagnostic
@@ -86,10 +86,10 @@ linters-settings:
       - octalLiteral
       - whyNoLint
       - wrapperFunc
-  
+
   lll:
     line-length: 120
-  
+
   revive:
     rules:
       - name: exported
@@ -149,25 +149,25 @@ linters:
     # Code formatting
     - gofmt
     - goimports
-    
+
     # Static analysis
     - govet
     - staticcheck
     - unused
     - gosimple
-    
+
     # Error handling
     - errcheck
     - errorlint
-    
+
     # Security
     - gosec
-    
+
     # Performance
     - prealloc
     - unconvert
     - unparam
-    
+
     # Code quality
     - goconst
     - gocritic
@@ -175,11 +175,11 @@ linters:
     - misspell
     - revive
     - lll
-    
+
     # Documentation
     - godot
     # - godox  # Disabled: TODO comments are acceptable during development
-    
+
     # Style
     - gofumpt
     - whitespace
@@ -192,7 +192,7 @@ issues:
         - lll
         - errcheck
         - gosec
-    
+
     # Exclude protobuf generated files
     - path: \.pb\.go$
       linters:
@@ -200,14 +200,13 @@ issues:
         - errcheck
         - revive
         - godot
-    
+
     # Allow fmt.Printf in test files (but not in production code)
     - path: _test\.go
       text: "fmt\\.Print"
       linters:
         - revive
-  
+
   max-issues-per-linter: 0
   max-same-issues: 0
   exclude-use-default: false
-
