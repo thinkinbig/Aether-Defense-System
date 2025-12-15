@@ -1,0 +1,290 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master, develop]
+  pull_request:
+    branches: [main, master, develop]
+
+env:
+  GO_VERSION: "1.22.2"
+  GOLANGCI_LINT_VERSION: "v1.55.2"
+
+jobs:
+  # Code formatting and linting
+  lint:
+    name: Lint and Format Check
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - name: Install goimports
+        run: go install golang.org/x/tools/cmd/goimports@latest
+
+      - name: Check code formatting
+        run: |
+          unformatted=$(go fmt ./...)
+          if [ -n "$unformatted" ]; then
+            echo "The following files are not formatted:"
+            echo "$unformatted"
+            exit 1
+          fi
+
+      - name: Check import formatting
+        run: |
+          # Exclude generated files from import check
+          unformatted=$(goimports -l . | grep -v "\.pb\.go$" | grep -v "\.pb_grpc\.go$" | grep -v "_gen\.go$" || true)
+          if [ -n "$unformatted" ]; then
+            echo "The following files have incorrect imports:"
+            echo "$unformatted"
+            exit 1
+          fi
+          echo "All imports are correctly formatted (excluding generated files)"
+
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v4
+        with:
+          version: ${{ env.GOLANGCI_LINT_VERSION }}
+          args: --timeout=5m
+          only-new-issues: false
+
+  # Unit tests with race detection
+  test:
+    name: Unit Tests
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.22.2"]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Run unit tests with race detection
+        run: go test -race -short -v ./...
+
+      - name: Run unit tests with coverage
+        run: go test -race -short -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          flags: unittests
+          name: codecov-umit
+          fail_ci_if_error: false
+        continue-on-error: true
+
+  # Test coverage report
+  coverage:
+    name: Test Coverage
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Generate coverage report
+        run: |
+          # Focus coverage on core business logic (internal/logic) and ignore data-only / generated code
+          logic_pkgs=$(go list ./service/... | grep '/internal/logic$' || true)
+          if [ -z "$logic_pkgs" ]; then
+            echo "No internal/logic packages found; skipping coverage check."
+            exit 0
+          fi
+
+          # Build comma-separated list for -coverpkg
+          coverpkg=$(echo "$logic_pkgs" | tr '\n' ',' | sed 's/,$//')
+
+          echo "Running coverage for packages:"
+          echo "$logic_pkgs"
+          echo "Using -coverpkg=${coverpkg}"
+
+          go test -race -short -coverprofile=coverage.out -covermode=atomic -coverpkg="${coverpkg}" $logic_pkgs
+          go tool cover -html=coverage.out -o coverage.html
+
+      - name: Check coverage threshold
+        run: |
+          coverage_line=$(go tool cover -func=coverage.out | grep total)
+          coverage=$(echo "$coverage_line" | awk '{print $3}' | sed 's/%//')
+          echo "Total coverage: ${coverage}%"
+          echo "::notice title=Coverage Report::Total coverage is ${coverage}%"
+          # Set minimum coverage threshold (adjust as needed)
+          threshold=80
+          # Extract integer part for comparison (simple approach)
+          coverage_int=$(echo "$coverage" | cut -d. -f1)
+          if [ "$coverage_int" -lt "$threshold" ]; then
+            echo "::error title=Coverage Below Threshold::Coverage ${coverage}% is below threshold ${threshold}%"
+            exit 1
+          fi
+          echo "Coverage ${coverage}% meets threshold ${threshold}%"
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: |
+            coverage.out
+            coverage.html
+
+  # Build verification
+  build:
+    name: Build Verification
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        go-version: ["1.22.2"]
+        os: [ubuntu-latest, macos-latest, windows-latest]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+          cache-dependency-path: go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Verify dependencies
+        run: go mod verify
+
+      - name: Build all services
+        run: |
+          # Build API services
+          for dir in cmd/api/*/; do
+            if [ -d "$dir" ] && [ -n "$(find "$dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
+              echo "Building $(basename $dir)..."
+              cd "$dir"
+              go build -v ./... || exit 1
+              cd - > /dev/null
+            else
+              echo "Skipping $(basename $dir) - no Go files found"
+            fi
+          done
+
+          # Build RPC services
+          for dir in cmd/rpc/*/; do
+            if [ -d "$dir" ] && [ -n "$(find "$dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
+              echo "Building $(basename $dir)..."
+              cd "$dir"
+              go build -v ./... || exit 1
+              cd - > /dev/null
+            else
+              echo "Skipping $(basename $dir) - no Go files found"
+            fi
+          done
+
+      - name: Build common packages
+        run: |
+          if [ -d "./common" ] && [ -n "$(find ./common -name '*.go' -type f 2>/dev/null | head -1)" ]; then
+            echo "Building common packages..."
+            go build ./common/...
+          else
+            echo "Skipping common packages - no Go files found (this is normal if common/ is empty)"
+          fi
+
+  # Integration tests (optional, can be enabled when test environment is ready)
+  integration-test:
+    name: Integration Tests
+    runs-on: ubuntu-latest
+    if: false # Disabled by default, set to true when integration tests are ready
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: test
+          MYSQL_DATABASE: test_db
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 3306:3306
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+        ports:
+          - 6379:6379
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ env.GO_VERSION }}
+          cache-dependency-path: go.sum
+
+      - name: Download dependencies
+        run: go mod download
+
+      - name: Wait for services to be ready
+        run: |
+          timeout 60 bash -c 'until mysqladmin ping -h 127.0.0.1 -u root -ptest --silent; do sleep 1; done'
+          timeout 60 bash -c 'until redis-cli -h 127.0.0.1 ping; do sleep 1; done'
+
+      - name: Run integration tests
+        run: go test -v ./test/integration/...
+        env:
+          MYSQL_HOST: 127.0.0.1
+          MYSQL_PORT: 3306
+          MYSQL_USER: root
+          MYSQL_PASSWORD: test
+          MYSQL_DATABASE: test_db
+          REDIS_HOST: 127.0.0.1
+          REDIS_PORT: 6379
+
+  # Summary job that depends on all other jobs
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-latest
+    needs: [lint, test, coverage, build]
+    if: always()
+    steps:
+      - name: Check job results
+        run: |
+          if [ "${{ needs.lint.result }}" != "success" ] || \
+             [ "${{ needs.test.result }}" != "success" ] || \
+             [ "${{ needs.coverage.result }}" != "success" ] || \
+             [ "${{ needs.build.result }}" != "success" ]; then
+            echo "One or more jobs failed"
+            exit 1
+          fi
+          echo "All CI checks passed!"

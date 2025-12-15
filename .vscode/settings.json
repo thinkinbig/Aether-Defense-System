@@ -38,8 +38,6 @@
     "--config=.golangci.yml",
     "--timeout=5m"
   ],
-  // Build and test settings
-  "go.buildOnSave": "off",
   "go.testOnSave": false,
   "go.coverOnSave": false,
   // ============================================
@@ -55,7 +53,7 @@
   // File associations
   "files.associations": {
     "*.api": "go",
-    "*.proto": "protobuf"
+    "*.proto": "protobuf",
   },
   // Exclude patterns
   "files.exclude": {
@@ -91,6 +89,8 @@
     "editor.insertSpaces": true,
     "editor.formatOnSave": false
   },
+  "yaml.validate": true,
+  "yaml.schemas": {},
   "[markdown]": {
     "editor.tabSize": 2,
     "editor.insertSpaces": true,

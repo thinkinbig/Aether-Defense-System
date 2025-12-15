@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package trade;
 
+option go_package = "github.com/aether-defense-system/service/trade/rpc";
+
 // Request Parameters
 message PlaceOrderRequest {
   int64 userId = 1;        // User ID, parsed from JWT Token

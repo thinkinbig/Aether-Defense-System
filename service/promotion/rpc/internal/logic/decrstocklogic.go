@@ -1,0 +1,34 @@
+// Package logic contains business logic implementations for promotion service.
+package logic
+
+import (
+	"context"
+
+	"github.com/aether-defense-system/service/promotion/rpc"
+	"github.com/aether-defense-system/service/promotion/rpc/internal/svc"
+
+	"github.com/zeromicro/go-zero/core/logx"
+)
+
+// DecrStockLogic handles inventory deduction logic.
+type DecrStockLogic struct {
+	ctx    context.Context
+	svcCtx *svc.ServiceContext
+	logx.Logger
+}
+
+// NewDecrStockLogic creates a new DecrStockLogic instance.
+func NewDecrStockLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DecrStockLogic {
+	return &DecrStockLogic{
+		ctx:    ctx,
+		svcCtx: svcCtx,
+		Logger: logx.WithContext(ctx),
+	}
+}
+
+// DecrStock decrements inventory.
+func (l *DecrStockLogic) DecrStock(_ *rpc.DecrStockRequest) (*rpc.DecrStockResponse, error) {
+	// todo: add your logic here and delete this line
+
+	return &rpc.DecrStockResponse{}, nil
+}

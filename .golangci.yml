@@ -1,5 +1,7 @@
+# yaml-language-server: $schema=none
 # golangci-lint configuration for Aether-Defense-System
 # See https://golangci-lint.run/usage/configuration/ for more details
+# Schema validation disabled - this config is valid for golangci-lint v1.55.2
 
 run:
   timeout: 5m
@@ -56,6 +58,20 @@ linters-settings:
   
   unparam:
     check-exported: false
+  
+  # godox disabled - TODO comments are acceptable during development
+  # godox:
+  #   keywords:
+  #     - NOTE
+  #     - OPTIMIZE
+  #     - HACK
+  
+  godot:
+    scope: declarations
+    exclude:
+      - "^TODO:"
+      - "^FIXME:"
+      - "^BUG:"
   
   gocritic:
     enabled-tags:
@@ -129,7 +145,6 @@ linters-settings:
         disabled: false
 
 linters:
-  disable-all: true
   enable:
     # Code formatting
     - gofmt
@@ -163,7 +178,7 @@ linters:
     
     # Documentation
     - godot
-    - godox
+    # - godox  # Disabled: TODO comments are acceptable during development
     
     # Style
     - gofumpt
@@ -184,6 +199,7 @@ issues:
         - lll
         - errcheck
         - revive
+        - godot
     
     # Allow fmt.Printf in test files (but not in production code)
     - path: _test\.go

@@ -70,7 +70,9 @@ repos:
 # Global configuration
 default_language_version:
   python: python3
-  node: "18"
+  # Use system-installed Node.js to avoid downloading prebuilt Node in CI/dev
+  # This prevents nodeenv from trying to fetch https://nodejs.org/.../node-v18-*.tar.gz
+  node: system
 
 # Exclude patterns
 exclude: |
@@ -82,4 +84,3 @@ exclude: |
     \.pb\.go$|
     _gen\.go$
   )
-

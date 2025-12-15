@@ -26,8 +26,8 @@ logx.WithContext(ctx).Infof("Processing order: orderId=%d, userId=%d", orderId, 
 
 ## Concurrency
 - Use `context.Context` for cancellation and timeouts
-- Avoid creating unbounded goroutines
-- Use worker pools for concurrent processing
+- Avoid creating unbounded goroutines (e.g., don't spawn a goroutine per task in a loop)
+- Use worker pools for concurrent processing (fixed number of goroutines processing tasks from a channel)
 - Always handle goroutine panics
 - Use channels for communication, mutexes for shared state protection
 
@@ -38,3 +38,16 @@ logx.WithContext(ctx).Infof("Processing order: orderId=%d, userId=%d", orderId, 
 - Minimize memory allocations in hot paths
 - Redis Lua scripts MUST execute in < 0.5ms
 - Avoid unnecessary type conversions
+
+## Linter Requirements
+- **MANDATORY**: Fix ALL linter errors before committing code
+- Run `golangci-lint run` before every commit
+- Linter errors must be fixed - code will not compile or has serious issues
+- Linter warnings should be fixed when possible, but are acceptable
+- Common errors to fix:
+  - Import path errors
+  - Type mismatches
+  - Unused variables/imports
+  - Missing package comments
+  - Incorrect function comment formats (should end with period)
+- Never commit code with linter errors

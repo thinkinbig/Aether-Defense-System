@@ -1,3 +1,4 @@
+// Package rpc implements the trade RPC service.
 package rpc
 
 import (
@@ -7,10 +8,10 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
-// TradeService trading service struct
+// TradeService trading service struct.
 type TradeService struct{}
 
-// PlaceOrder place order
+// PlaceOrder place order.
 func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (*PlaceOrderResponse, error) {
 	// Parameter validation
 	if req.UserId <= 0 {
@@ -40,12 +41,12 @@ func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (
 
 	return &PlaceOrderResponse{
 		OrderId:   req.OrderId,
-		PayAmount: int32(req.RealAmount),
+		PayAmount: req.RealAmount,
 		Status:    1, // Pending Payment
 	}, nil
 }
 
-// CancelOrder cancel order
+// CancelOrder cancel order.
 func (s *TradeService) CancelOrder(ctx context.Context, req *CancelOrderRequest) (*CancelOrderResponse, error) {
 	// Parameter validation
 	if req.UserId <= 0 {
