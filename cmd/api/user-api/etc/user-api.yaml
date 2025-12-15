@@ -1,0 +1,7 @@
+Name: user-api
+Host: 0.0.0.0
+Port: 8888
+
+UserRpc:
+  # For local development, call user.rpc directly without etcd.
+  Target: 127.0.0.1:8080

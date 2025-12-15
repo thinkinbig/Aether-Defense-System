@@ -8,7 +8,9 @@ import (
 )
 
 // UserService user service struct.
-type UserService struct{}
+type UserService struct {
+	UnimplementedUserServiceServer
+}
 
 // GetUser get user information.
 func (s *UserService) GetUser(ctx context.Context, req *GetUserRequest) (*GetUserResponse, error) {
