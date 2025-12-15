@@ -2,13 +2,13 @@ name: CI
 
 on:
   push:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
   pull_request:
-    branches: [ main, master, develop ]
+    branches: [main, master, develop]
 
 env:
-  GO_VERSION: '1.22.2'
-  GOLANGCI_LINT_VERSION: 'v1.55.2'
+  GO_VERSION: "1.22.2"
+  GOLANGCI_LINT_VERSION: "v1.55.2"
 
 jobs:
   # Code formatting and linting
@@ -59,7 +59,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.22.2']
+        go-version: ["1.22.2"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -144,7 +144,7 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        go-version: ['1.22.2']
+        go-version: ["1.22.2"]
         os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout code
@@ -166,32 +166,42 @@ jobs:
         run: |
           # Build API services
           for dir in cmd/api/*/; do
-            if [ -d "$dir" ]; then
+            if [ -d "$dir" ] && [ -n "$(find "$dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
               echo "Building $(basename $dir)..."
               cd "$dir"
               go build -v ./... || exit 1
               cd - > /dev/null
+            else
+              echo "Skipping $(basename $dir) - no Go files found"
             fi
           done
-          
+
           # Build RPC services
           for dir in cmd/rpc/*/; do
-            if [ -d "$dir" ]; then
+            if [ -d "$dir" ] && [ -n "$(find "$dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
               echo "Building $(basename $dir)..."
               cd "$dir"
               go build -v ./... || exit 1
               cd - > /dev/null
+            else
+              echo "Skipping $(basename $dir) - no Go files found"
             fi
           done
 
       - name: Build common packages
-        run: go build ./common/...
+        run: |
+          if [ -d "./common" ] && [ -n "$(find ./common -name '*.go' -type f 2>/dev/null | head -1)" ]; then
+            echo "Building common packages..."
+            go build ./common/...
+          else
+            echo "Skipping common packages - no Go files found (this is normal if common/ is empty)"
+          fi
 
   # Integration tests (optional, can be enabled when test environment is ready)
   integration-test:
     name: Integration Tests
     runs-on: ubuntu-latest
-    if: false  # Disabled by default, set to true when integration tests are ready
+    if: false # Disabled by default, set to true when integration tests are ready
     services:
       mysql:
         image: mysql:8.0
@@ -205,7 +215,7 @@ jobs:
           --health-retries=3
         ports:
           - 3306:3306
-      
+
       redis:
         image: redis:7-alpine
         options: >-
@@ -262,4 +272,3 @@ jobs:
             exit 1
           fi
           echo "All CI checks passed!"
-
