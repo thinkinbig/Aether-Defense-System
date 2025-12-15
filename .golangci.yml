@@ -1,5 +1,7 @@
+# yaml-language-server: $schema=none
 # golangci-lint configuration for Aether-Defense-System
 # See https://golangci-lint.run/usage/configuration/ for more details
+# Schema validation disabled - this config is valid for golangci-lint v1.55.2
 
 run:
   timeout: 5m
@@ -142,7 +144,6 @@ linters-settings:
         disabled: false
 
 linters:
-  disable-all: true
   enable:
     # Code formatting
     - gofmt
