@@ -40,7 +40,7 @@ func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (
 
 	return &PlaceOrderResponse{
 		OrderId:   req.OrderId,
-		PayAmount: int32(req.RealAmount),
+		PayAmount: req.RealAmount,
 		Status:    1, // Pending Payment
 	}, nil
 }

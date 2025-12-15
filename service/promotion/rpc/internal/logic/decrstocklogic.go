@@ -23,7 +23,7 @@ func NewDecrStockLogic(ctx context.Context, svcCtx *svc.ServiceContext) *DecrSto
 	}
 }
 
-// Decrement Inventory Interface
+// DecrStock decrements inventory.
 func (l *DecrStockLogic) DecrStock(in *rpc.DecrStockRequest) (*rpc.DecrStockResponse, error) {
 	// todo: add your logic here and delete this line
 

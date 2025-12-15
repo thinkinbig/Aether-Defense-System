@@ -23,7 +23,7 @@ func NewGetUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserLo
 	}
 }
 
-// Get User Information Interface
+// GetUser gets user information.
 func (l *GetUserLogic) GetUser(in *rpc.GetUserRequest) (*rpc.GetUserResponse, error) {
 	// todo: add your logic here and delete this line
 
