@@ -23,13 +23,13 @@ func NewTradeServiceServer(svcCtx *svc.ServiceContext) *TradeServiceServer {
 	}
 }
 
-// Place Order Interface
+// PlaceOrder places an order.
 func (s *TradeServiceServer) PlaceOrder(ctx context.Context, in *rpc.PlaceOrderRequest) (*rpc.PlaceOrderResponse, error) {
 	l := logic.NewPlaceOrderLogic(ctx, s.svcCtx)
 	return l.PlaceOrder(in)
 }
 
-// Cancel Order Interface
+// CancelOrder cancels an order.
 func (s *TradeServiceServer) CancelOrder(ctx context.Context, in *rpc.CancelOrderRequest) (*rpc.CancelOrderResponse, error) {
 	l := logic.NewCancelOrderLogic(ctx, s.svcCtx)
 	return l.CancelOrder(in)

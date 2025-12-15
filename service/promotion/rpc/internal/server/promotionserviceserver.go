@@ -23,7 +23,7 @@ func NewPromotionServiceServer(svcCtx *svc.ServiceContext) *PromotionServiceServ
 	}
 }
 
-// Decrement Inventory Interface
+// DecrStock decrements inventory.
 func (s *PromotionServiceServer) DecrStock(ctx context.Context, in *rpc.DecrStockRequest) (*rpc.DecrStockResponse, error) {
 	l := logic.NewDecrStockLogic(ctx, s.svcCtx)
 	return l.DecrStock(in)
