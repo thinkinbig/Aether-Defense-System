@@ -1,3 +1,4 @@
+// Package rpc implements the user RPC service.
 package rpc
 
 import (

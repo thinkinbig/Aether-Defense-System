@@ -1,3 +1,4 @@
+// Package rpc implements the promotion RPC service.
 package rpc
 
 import (

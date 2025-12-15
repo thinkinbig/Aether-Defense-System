@@ -1,3 +1,4 @@
+// Package logic contains business logic implementations for user service.
 package logic
 
 import (
@@ -9,12 +10,14 @@ import (
 	"github.com/zeromicro/go-zero/core/logx"
 )
 
+// GetUserLogic handles user information retrieval logic.
 type GetUserLogic struct {
 	ctx    context.Context
 	svcCtx *svc.ServiceContext
 	logx.Logger
 }
 
+// NewGetUserLogic creates a new GetUserLogic instance.
 func NewGetUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserLogic {
 	return &GetUserLogic{
 		ctx:    ctx,
@@ -24,7 +27,7 @@ func NewGetUserLogic(ctx context.Context, svcCtx *svc.ServiceContext) *GetUserLo
 }
 
 // GetUser gets user information.
-func (l *GetUserLogic) GetUser(in *rpc.GetUserRequest) (*rpc.GetUserResponse, error) {
+func (l *GetUserLogic) GetUser(_ *rpc.GetUserRequest) (*rpc.GetUserResponse, error) {
 	// todo: add your logic here and delete this line
 
 	return &rpc.GetUserResponse{}, nil

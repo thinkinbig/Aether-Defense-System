@@ -1,3 +1,4 @@
+// Package rpc implements the trade RPC service.
 package rpc
 
 import (
