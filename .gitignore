@@ -1,2 +1,18 @@
 # Local Cursor project configuration (MCP tokens, etc.)
 .cursor/mcp.json
+
+# Node.js dependencies (local only, never commit)
+node_modules/
+
+# Go build artifacts
+bin/
+*.exe
+*.test
+
+# Go coverage artifacts
+coverage.out
+coverage.html
+
+# Editor / OS noise (project-specific; adjust if needed)
+.DS_Store
+Thumbs.db
