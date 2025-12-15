@@ -1,0 +1,671 @@
+# Testing Structure and Conventions
+
+## Test Directory Organization
+
+### Unit Tests (One-to-One Correspondence with Source Code)
+
+Unit tests follow Go standard conventions and are placed **in the same directory as the source code files**, using the `_test.go` suffix.
+
+#### Directory Structure Example
+
+```
+service/
+  trade/
+    rpc/
+      trade.go              # Source code
+      trade_test.go         # Unit test (corresponds to trade.go)
+      order.go              # Source code
+      order_test.go         # Unit test (corresponds to order.go)
+      promotion.proto       # Proto definition
+      
+common/
+  snowflake/
+    generator.go            # Source code
+    generator_test.go       # Unit test (corresponds to generator.go)
+    
+cmd/
+  api/
+    trade-api/
+      handler.go            # Source code
+      handler_test.go       # Unit test (corresponds to handler.go)
+```
+
+#### Unit Test Naming Conventions
+
+- Test files: `{source_file}_test.go`
+- Test functions: `Test{Type}_{Method}_{Scenario}` (e.g., `TestTradeService_PlaceOrder_Success`, `TestTradeService_PlaceOrder_InvalidUserId`)
+- Test tables: When using table-driven tests, name the test function as `Test{Type}_{Method}`, and use subtests to distinguish scenarios
+
+#### Unit Test Requirements
+
+- ✅ Every exported function/method must have corresponding tests
+- ✅ Test both success and error paths
+- ✅ Test boundary conditions and edge values
+- ✅ Use mocks to isolate external dependencies (database, Redis, MQ, other services)
+- ✅ Test coverage target: core business logic > 80%
+
+#### Unit Test Example
+
+```go
+// service/trade/rpc/trade_test.go
+package rpc
+
+import (
+    "context"
+    "testing"
+    
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/mock"
+)
+
+func TestTradeService_PlaceOrder_Success(t *testing.T) {
+    // Arrange
+    ctx := context.Background()
+    service := &TradeService{}
+    req := &PlaceOrderRequest{
+        UserId:     123,
+        OrderId:    456,
+        CourseIds:  []int64{1, 2},
+        RealAmount: 10000,
+    }
+    
+    // Act
+    resp, err := service.PlaceOrder(ctx, req)
+    
+    // Assert
+    assert.NoError(t, err)
+    assert.NotNil(t, resp)
+    assert.Equal(t, int32(10000), resp.PayAmount)
+}
+
+func TestTradeService_PlaceOrder_InvalidUserId(t *testing.T) {
+    // Arrange
+    ctx := context.Background()
+    service := &TradeService{}
+    req := &PlaceOrderRequest{
+        UserId:     0, // Invalid
+        OrderId:    456,
+        CourseIds:  []int64{1},
+        RealAmount: 10000,
+    }
+    
+    // Act
+    resp, err := service.PlaceOrder(ctx, req)
+    
+    // Assert
+    assert.Error(t, err)
+    assert.Nil(t, resp)
+    assert.Contains(t, err.Error(), "invalid user_id")
+}
+```
+
+### Integration Tests
+
+Integration tests test interactions between multiple components/services and are placed in a separate `test/integration/` directory.
+
+#### Directory Structure
+
+```
+test/
+  integration/
+    trade/                  # Integration tests related to Trade service
+      order_flow_test.go    # Order flow integration tests
+      payment_flow_test.go   # Payment flow integration tests
+    promotion/              # Integration tests related to Promotion service
+      stock_test.go         # Stock-related integration tests
+    cross_service/          # Cross-service integration tests
+      order_with_promotion_test.go  # Order + promotion integration tests
+    setup.go                # Test environment setup (database, Redis connections, etc.)
+    testdata/               # Test data files
+      orders.json
+      users.json
+```
+
+#### Integration Test Naming Conventions
+
+- Test files: `{feature}_test.go` or `{service}_{feature}_test.go`
+- Test functions: `TestIntegration_{Feature}_{Scenario}` (e.g., `TestIntegration_OrderFlow_PlaceAndPay`, `TestIntegration_OrderFlow_PlaceAndCancel`)
+
+#### Integration Test Requirements
+
+- ✅ Test complete business flows (API -> RPC -> Database)
+- ✅ Can use real external dependencies (database, Redis), but should use test environment
+- ✅ Each test should be independent and can run in parallel
+- ✅ Use `testcontainers` or Docker Compose to manage test environment
+- ✅ Clean up data after tests to avoid interference between tests
+- ✅ Use `t.Cleanup()` to ensure resource cleanup
+
+#### Integration Test Example
+
+```go
+// test/integration/trade/order_flow_test.go
+package trade
+
+import (
+    "context"
+    "testing"
+    
+    "github.com/stretchr/testify/assert"
+    "github.com/stretchr/testify/require"
+)
+
+func TestIntegration_OrderFlow_PlaceAndPay(t *testing.T) {
+    // Arrange: Set up test environment (database, Redis connections, etc.)
+    ctx := context.Background()
+    setup := setupTestEnvironment(t)
+    defer setup.Cleanup()
+    
+    // Act: Execute complete business flow
+    // 1. Create order
+    orderResp, err := setup.TradeService.PlaceOrder(ctx, &PlaceOrderRequest{
+        UserId:     123,
+        OrderId:    generateOrderID(),
+        CourseIds:  []int64{1, 2},
+        RealAmount: 10000,
+    })
+    require.NoError(t, err)
+    
+    // 2. Pay order
+    payResp, err := setup.PaymentService.ProcessPayment(ctx, &PaymentRequest{
+        OrderId: orderResp.OrderId,
+        Amount:  orderResp.PayAmount,
+    })
+    
+    // Assert: Verify complete flow
+    assert.NoError(t, err)
+    assert.Equal(t, PaymentStatusSuccess, payResp.Status)
+    
+    // Verify database state
+    order, err := setup.OrderRepo.GetByID(ctx, orderResp.OrderId)
+    assert.NoError(t, err)
+    assert.Equal(t, OrderStatusPaid, order.Status)
+}
+```
+
+#### Integration Test Environment Setup
+
+```go
+// test/integration/setup.go
+package integration
+
+import (
+    "testing"
+    
+    "github.com/testcontainers/testcontainers-go"
+    "github.com/testcontainers/testcontainers-go/modules/mysql"
+    "github.com/testcontainers/testcontainers-go/modules/redis"
+)
+
+type TestSetup struct {
+    DB          *sql.DB
+    RedisClient *redis.Client
+    TradeService *rpc.TradeService
+    // ... other services
+}
+
+func setupTestEnvironment(t *testing.T) *TestSetup {
+    // Use testcontainers to start database and Redis
+    mysqlContainer, err := mysql.RunContainer(ctx,
+        testcontainers.WithImage("mysql:8.0"),
+        mysql.WithDatabase("test_db"),
+        mysql.WithUsername("test"),
+        mysql.WithPassword("test"),
+    )
+    require.NoError(t, err)
+    
+    redisContainer, err := redis.RunContainer(ctx,
+        testcontainers.WithImage("redis:7-alpine"),
+    )
+    require.NoError(t, err)
+    
+    // Get connection info and initialize services
+    // ...
+    
+    setup := &TestSetup{
+        // Initialize connections and services
+    }
+    
+    // Use t.Cleanup to ensure resource cleanup
+    t.Cleanup(func() {
+        mysqlContainer.Terminate(ctx)
+        redisContainer.Terminate(ctx)
+    })
+    
+    return setup
+}
+```
+
+## Test Execution
+
+### Running Unit Tests
+
+```bash
+# Run all unit tests
+go test ./...
+
+# Run unit tests for a specific package
+go test ./service/trade/rpc/...
+
+# Run tests with coverage display
+go test -cover ./...
+
+# Run tests and generate coverage report
+go test -coverprofile=coverage.out ./...
+go tool cover -html=coverage.out
+
+# Run tests with race detection
+go test -race ./...
+```
+
+### Running Integration Tests
+
+```bash
+# Run all integration tests (test environment needs to be started first)
+go test ./test/integration/...
+
+# Run integration tests for a specific service
+go test ./test/integration/trade/...
+
+# Run integration tests with verbose output
+go test -v ./test/integration/...
+```
+
+### Testing in CI/CD
+
+```yaml
+# .github/workflows/test.yml example
+- name: Run Unit Tests
+  run: go test -race -coverprofile=coverage.out ./...
+
+- name: Run Integration Tests
+  run: |
+    docker-compose -f test/docker-compose.test.yml up -d
+    go test ./test/integration/...
+    docker-compose -f test/docker-compose.test.yml down
+```
+
+## Test Data Management
+
+### Test Data Files
+
+- Place in `test/integration/testdata/` directory
+- Use JSON or YAML format
+- File names should describe data purpose (e.g., `valid_order.json`, `invalid_user.json`)
+
+### Test Data Loading Example
+
+```go
+// test/integration/testdata/orders.json
+{
+  "valid_order": {
+    "user_id": 123,
+    "course_ids": [1, 2, 3],
+    "real_amount": 10000
+  }
+}
+
+// Usage in tests
+func loadTestData(t *testing.T, filename string) []byte {
+    data, err := os.ReadFile(filepath.Join("testdata", filename))
+    require.NoError(t, err)
+    return data
+}
+```
+
+## Mock and Stub
+
+### Mock vs Stub Differences
+
+**Mock**:
+- Used to **verify interaction behavior** (whether method is called, call count, parameter correctness)
+- Focuses on **how it's called** (call order, call count)
+- Use case: Need to verify method calls, call order, call count
+
+**Stub**:
+- Used to **provide predefined return values**, doesn't care if it's called
+- Focuses on **what value is returned**, doesn't verify call behavior
+- Use case: Only need dependency to return specific value, don't need to verify calls
+
+### When to Use Mock
+
+✅ **Scenarios for using Mock**:
+- Need to verify if method is called (e.g., verify if MQ message was sent)
+- Need to verify call count (e.g., verify retry logic)
+- Need to verify call parameters (e.g., verify parameters passed to downstream service)
+- Need to verify call order (e.g., verify transaction commit order)
+
+```go
+// Example: Need to verify if MQ message was sent
+func TestTradeService_PlaceOrder_SendsMQMessage(t *testing.T) {
+    mockMQ := &mocks.MessageQueue{}
+    mockMQ.On("SendHalfMessage", mock.Anything, mock.MatchedBy(func(msg *OrderMessage) bool {
+        return msg.OrderId == 123 && msg.UserId == 456
+    })).Return(nil)
+    
+    service := &TradeService{mq: mockMQ}
+    service.PlaceOrder(ctx, req)
+    
+    // Verify message was sent
+    mockMQ.AssertExpectations(t)
+    mockMQ.AssertNumberOfCalls(t, "SendHalfMessage", 1)
+}
+```
+
+### When to Use Stub
+
+✅ **Scenarios for using Stub**:
+- Only need dependency to return specific value, don't care if it's called
+- Testing business logic, don't need to verify external calls
+- Simplify tests, reduce unnecessary verification
+
+```go
+// Example: Only need to get coupon info, don't care if it's called
+func TestTradeService_PlaceOrder_WithCoupon(t *testing.T) {
+    stubPromotion := &stubs.PromotionClient{}
+    stubPromotion.StubGetCoupon = func(ctx context.Context, couponID int64) (*Coupon, error) {
+        return &Coupon{ID: couponID, Discount: 1000}, nil
+    }
+    
+    service := &TradeService{promotionClient: stubPromotion}
+    resp, err := service.PlaceOrder(ctx, req)
+    
+    // Only verify business logic, don't verify if GetCoupon was called
+    assert.NoError(t, err)
+    assert.Equal(t, int32(9000), resp.PayAmount) // Original price 10000 - discount 1000
+}
+```
+
+### What Dependencies Need Mock/Stub
+
+#### Dependencies That Must Be Mocked/Stubbed
+
+1. **External RPC Services**
+   - ✅ gRPC clients for other microservices (e.g., `PromotionClient`, `UserClient`)
+   - ✅ Third-party API clients
+   - **Reason**: Avoid real network calls, control return values, test error scenarios
+
+2. **Message Queue (MQ)**
+   - ✅ RocketMQ Producer/Consumer
+   - ✅ Transactional message sending
+   - **Reason**: Avoid real message sending, verify message content
+
+3. **Database Operations (Unit Test)**
+   - ✅ Repository interfaces should be Mocked/Stubbed
+   - ✅ Database connections should be Mocked
+   - **Reason**: Unit tests should isolate database, execute quickly
+   - **Note**: Integration Tests can use real database
+
+4. **Redis Operations (Unit Test)**
+   - ✅ Redis Client should be Mocked/Stubbed
+   - ✅ Lua script execution should be Mocked
+   - **Reason**: Unit tests should isolate Redis, avoid dependency on external services
+   - **Note**: Integration Tests can use real Redis
+
+5. **Time-Related Operations**
+   - ✅ `time.Now()` should be Mocked/Stubbed
+   - ✅ Timers, timeouts, etc.
+   - **Reason**: Tests need controllable time, avoid time-related flaky tests
+
+6. **Random Number Generation**
+   - ✅ ID generators (if injectable)
+   - ✅ Random number generation
+   - **Reason**: Tests need predictable values
+
+7. **File System Operations**
+   - ✅ File read/write operations
+   - ✅ Configuration file reading
+   - **Reason**: Avoid dependency on file system, improve test portability
+
+#### Cases That Don't Need Mock/Stub
+
+❌ **Don't need Mock/Stub**:
+- Pure functions (no side effects, predictable)
+- Standard library functions (unless affecting test stability, like `time.Now()`)
+- Simple data structure operations
+- Calculation functions in business logic
+
+### Mock Implementation Standards
+
+#### Using testify/mock
+
+```go
+// 1. Define interface (if not already defined)
+type PromotionClient interface {
+    GetCoupon(ctx context.Context, couponID int64) (*Coupon, error)
+    ValidateCoupon(ctx context.Context, couponID int64, userId int64) (bool, error)
+}
+
+// 2. Generate Mock (using mockery)
+//go:generate mockery --name=PromotionClient --output=./mocks --filename=promotion_client_mock.go
+
+// 3. Use in tests
+func TestTradeService_PlaceOrder_WithCoupon(t *testing.T) {
+    mockPromotion := mocks.NewPromotionClient(t)
+    mockPromotion.On("GetCoupon", mock.Anything, int64(1)).
+        Return(&Coupon{ID: 1, Discount: 1000}, nil).
+        Once() // Verify called only once
+    
+    service := &TradeService{promotionClient: mockPromotion}
+    resp, err := service.PlaceOrder(ctx, req)
+    
+    assert.NoError(t, err)
+    mockPromotion.AssertExpectations(t) // Verify all expected calls occurred
+}
+```
+
+#### Mock Best Practices
+
+1. **Use `mock.MatchedBy` for complex parameter validation**
+   ```go
+   mockMQ.On("SendMessage", mock.Anything, mock.MatchedBy(func(msg *Message) bool {
+       return msg.OrderId == 123 && msg.Amount > 0
+   })).Return(nil)
+   ```
+
+2. **Specify call count explicitly**
+   ```go
+   mockClient.On("GetUser", mock.Anything, int64(123)).
+       Return(&User{}, nil).
+       Once() // or Twice(), Times(3)
+   ```
+
+3. **Verify call order (if needed)**
+   ```go
+   call1 := mockDB.On("BeginTx", mock.Anything).Return(tx, nil)
+   call2 := mockDB.On("Commit", mock.Anything, tx).Return(nil)
+   call1.NotBefore(call2) // call1 must be before call2
+   ```
+
+### Stub Implementation Standards
+
+#### Method 1: Simple Function Stub
+
+```go
+// service/trade/rpc/stubs/promotion_client.go
+package stubs
+
+import "context"
+
+type PromotionClientStub struct {
+    GetCouponFunc func(ctx context.Context, couponID int64) (*Coupon, error)
+}
+
+func (s *PromotionClientStub) GetCoupon(ctx context.Context, couponID int64) (*Coupon, error) {
+    if s.GetCouponFunc != nil {
+        return s.GetCouponFunc(ctx, couponID)
+    }
+    return nil, errors.New("GetCouponFunc not set")
+}
+
+// Usage in tests
+func TestTradeService_PlaceOrder_WithCoupon(t *testing.T) {
+    stubPromotion := &stubs.PromotionClientStub{}
+    stubPromotion.GetCouponFunc = func(ctx context.Context, couponID int64) (*Coupon, error) {
+        return &Coupon{ID: couponID, Discount: 1000}, nil
+    }
+    
+    service := &TradeService{promotionClient: stubPromotion}
+    // ... test code
+}
+```
+
+#### Method 2: Using gomock Stub
+
+```go
+// Create stub using gomock (lighter weight)
+type PromotionClientStub struct {
+    coupons map[int64]*Coupon
+}
+
+func NewPromotionClientStub() *PromotionClientStub {
+    return &PromotionClientStub{
+        coupons: make(map[int64]*Coupon),
+    }
+}
+
+func (s *PromotionClientStub) SetCoupon(couponID int64, coupon *Coupon) {
+    s.coupons[couponID] = coupon
+}
+
+func (s *PromotionClientStub) GetCoupon(ctx context.Context, couponID int64) (*Coupon, error) {
+    coupon, ok := s.coupons[couponID]
+    if !ok {
+        return nil, errors.New("coupon not found")
+    }
+    return coupon, nil
+}
+```
+
+### Mock/Stub Directory Structure
+
+```
+service/
+  trade/
+    rpc/
+      trade.go
+      trade_test.go
+      mocks/                    # Mock files
+        promotion_client_mock.go
+        user_client_mock.go
+      stubs/                    # Stub files (optional)
+        promotion_client_stub.go
+        time_stub.go
+```
+
+### Dependency Injection Pattern
+
+To facilitate Mock/Stub, code should use **dependency injection**:
+
+```go
+// ✅ Good design: Dependencies injected via interfaces
+type TradeService struct {
+    promotionClient PromotionClient  // Interface, can inject Mock/Stub
+    userClient     UserClient
+    orderRepo      OrderRepository
+    mq             MessageQueue
+}
+
+func NewTradeService(
+    promotionClient PromotionClient,
+    userClient UserClient,
+    orderRepo OrderRepository,
+    mq MessageQueue,
+) *TradeService {
+    return &TradeService{
+        promotionClient: promotionClient,
+        userClient:     userClient,
+        orderRepo:      orderRepo,
+        mq:             mq,
+    }
+}
+
+// ❌ Bad design: Directly create dependencies
+type TradeService struct {
+    // ...
+}
+
+func NewTradeService() *TradeService {
+    return &TradeService{
+        promotionClient: grpc.NewPromotionClient(), // Cannot Mock
+    }
+}
+```
+
+### Mock/Stub Selection Decision Tree
+
+```
+Need to verify method calls/count/parameters?
+├─ Yes → Use Mock
+└─ No → Only need return value?
+    ├─ Yes → Use Stub
+    └─ No → Don't need Mock/Stub (might be pure function)
+```
+
+### Example: Complete Test Case
+
+```go
+func TestTradeService_PlaceOrder_CompleteFlow(t *testing.T) {
+    // Arrange: Set up all dependency Mocks/Stubs
+    mockUserClient := mocks.NewUserClient(t)
+    mockUserClient.On("GetUser", mock.Anything, int64(123)).
+        Return(&User{ID: 123, Status: "active"}, nil).
+        Once()
+    
+    stubPromotion := &stubs.PromotionClientStub{}
+    stubPromotion.GetCouponFunc = func(ctx context.Context, couponID int64) (*Coupon, error) {
+        return &Coupon{ID: couponID, Discount: 1000}, nil
+    }
+    
+    mockOrderRepo := mocks.NewOrderRepository(t)
+    mockOrderRepo.On("Create", mock.Anything, mock.MatchedBy(func(order *Order) bool {
+        return order.UserId == 123 && order.Amount == 9000
+    })).Return(int64(456), nil).Once()
+    
+    mockMQ := mocks.NewMessageQueue(t)
+    mockMQ.On("SendHalfMessage", mock.Anything, mock.AnythingOfType("*OrderMessage")).
+        Return(nil).Once()
+    
+    // Create service instance
+    service := NewTradeService(
+        stubPromotion,    // Stub: Only need return value
+        mockUserClient,   // Mock: Need to verify calls
+        mockOrderRepo,    // Mock: Need to verify calls
+        mockMQ,           // Mock: Need to verify message sending
+    )
+    
+    // Act
+    resp, err := service.PlaceOrder(ctx, &PlaceOrderRequest{
+        UserId:     123,
+        CourseIds:  []int64{1, 2},
+        CouponIds:  []int64{1},
+        RealAmount: 10000,
+    })
+    
+    // Assert
+    assert.NoError(t, err)
+    assert.Equal(t, int64(456), resp.OrderId)
+    assert.Equal(t, int32(9000), resp.PayAmount)
+    
+    // Verify all Mock expectations are met
+    mockUserClient.AssertExpectations(t)
+    mockOrderRepo.AssertExpectations(t)
+    mockMQ.AssertExpectations(t)
+}
+```
+
+## Testing Best Practices
+
+1. **Test Isolation**: Each test should be independent and not depend on execution order of other tests
+2. **Test Naming**: Use descriptive test names that clearly describe the test scenario
+3. **AAA Pattern**: Arrange-Act-Assert, clearly separate the three phases of testing
+4. **Avoid Testing Implementation Details**: Test behavior, not implementation
+5. **Use Table-Driven Tests**: For multiple similar scenarios, use table-driven tests
+6. **Clean Up Resources**: Use `t.Cleanup()` or `defer` to ensure resource cleanup
+7. **Parallel Testing**: Unit tests can run in parallel, Integration tests need careful handling of parallelism
+
+## Test Coverage Requirements
+
+- **Unit Tests**: Core business logic coverage > 80%
+- **Integration Tests**: Critical business flow coverage > 60%
+- Use `go test -cover` to check coverage
+- CI/CD should set coverage threshold checks

@@ -26,8 +26,8 @@ logx.WithContext(ctx).Infof("Processing order: orderId=%d, userId=%d", orderId, 
 
 ## Concurrency
 - Use `context.Context` for cancellation and timeouts
-- Avoid creating unbounded goroutines
-- Use worker pools for concurrent processing
+- Avoid creating unbounded goroutines (e.g., don't spawn a goroutine per task in a loop)
+- Use worker pools for concurrent processing (fixed number of goroutines processing tasks from a channel)
 - Always handle goroutine panics
 - Use channels for communication, mutexes for shared state protection
 
