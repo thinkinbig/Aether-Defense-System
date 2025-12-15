@@ -50,10 +50,10 @@ func processOrder(ctx context.Context) {
     // 从池中获取对象
     order := orderPool.Get().(*Order)
     defer orderPool.Put(order)
-    
+
     // 重置对象状态
     order.Reset()
-    
+
     // 使用对象
     // ...
 }
@@ -262,7 +262,7 @@ func (c *Cache) Get(ctx context.Context, key string) (string, error) {
     if val, ok := c.local.Get(key); ok {
         return val.(string), nil
     }
-    
+
     // 再查 Redis
     val, err := c.redis.Get(ctx, key).Result()
     if err == nil {
@@ -342,10 +342,10 @@ db.InsertBatch(items)  // 一次事务插入多条
 func createOrder(ctx context.Context, order *Order) error {
     // 1. 先写入 Redis（快速响应）
     redis.Set(ctx, fmt.Sprintf("order:%d", order.ID), order, 5*time.Minute)
-    
+
     // 2. 发送消息到 MQ（异步写入数据库）
     mq.SendMessage("order-create", order)
-    
+
     return nil
 }
 ```
@@ -433,7 +433,7 @@ client := &http.Client{Transport: transport}
 func BenchmarkPlaceOrder(b *testing.B) {
     s := setupService()
     req := &PlaceOrderRequest{...}
-    
+
     b.ResetTimer()
     for i := 0; i < b.N; i++ {
         _, _ = s.PlaceOrder(context.Background(), req)
@@ -492,4 +492,3 @@ var (
 
 - [项目设计指标文档](../design/project-design-indicators.md)
 - [系统设计规范文档](../design/system-design-specification.md)
-

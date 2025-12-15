@@ -4,26 +4,30 @@
 
 When making ANY code modification, you MUST follow this exact workflow:
 
+> **Before you start any step below, first check if there are relevant rules in `.cursor/rules/` (e.g., testing, git workflow, code style) for what you are about to do, and read them.**
+
 ```
-1. Create New Branch (from main/master)
+1. Check relevant rules in `.cursor/rules/` (testing, git workflow, code style, etc.)
    ↓
-2. Switch to New Branch
+2. Create New Branch (from main/master)
    ↓
-3. Write Tests First (TDD)
+3. Switch to New Branch
    ↓
-4. Implement Code
+4. Write Tests First (TDD)
    ↓
-5. Run All Tests & Verify They Pass
+5. Implement Code
    ↓
-6. Update Documentation
+6. Run All Tests & Verify They Pass
    ↓
-7. Commit Changes (follow commit format)
+7. Update Documentation
    ↓
-8. Push Branch to Remote
+8. Commit Changes (follow commit format)
    ↓
-9. Create Pull Request
+9. Push Branch to Remote
    ↓
-10. Code Review & Merge
+10. Create Pull Request
+   ↓
+11. Code Review & Merge
 ```
 
 ## Git Workflow First
@@ -261,7 +265,7 @@ AI should:
    - TestCancelOrder_Success
    - TestCancelOrder_NotFound
    - TestCancelOrder_AlreadyPaid
-   
+
 2. Generate minimal implementation to pass tests
 
 3. User runs: go test ./...

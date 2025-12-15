@@ -32,12 +32,14 @@
 ### 禁止跨服务直接访问数据
 
 ❌ **错误做法**：
+
 ```go
 // 在 trade-rpc 中直接访问 user 数据库
 db.Query("SELECT * FROM users WHERE id = ?", userId)
 ```
 
 ✅ **正确做法**：
+
 ```go
 // 通过 gRPC 调用 user-rpc
 userClient := userrpc.NewUserClient(conn)
@@ -360,12 +362,12 @@ func (s *TradeService) HealthCheck(ctx context.Context, req *HealthCheckRequest)
     if err := s.db.Ping(); err != nil {
         return &HealthCheckResponse{Status: "unhealthy"}, nil
     }
-    
+
     // 检查 Redis 连接
     if err := s.redis.Ping(ctx).Err(); err != nil {
         return &HealthCheckResponse{Status: "unhealthy"}, nil
     }
-    
+
     return &HealthCheckResponse{Status: "healthy"}, nil
 }
 ```
@@ -384,4 +386,3 @@ func (s *TradeService) HealthCheck(ctx context.Context, req *HealthCheckRequest)
 - [系统架构设计文档](../design/architecture.md)
 - [性能优化指南](./performance-guidelines.md)
 - [架构设计标准](../design/architecture-standards.md)
-

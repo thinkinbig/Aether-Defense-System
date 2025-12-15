@@ -20,7 +20,7 @@
     "ui.diagnostic.staticcheck": true,
     "ui.completion.usePlaceholders": true
   },
-  
+
   // Explicitly enable language server for diagnostics
   "go.languageServerExperimentalFeatures": {
     "diagnostics": true

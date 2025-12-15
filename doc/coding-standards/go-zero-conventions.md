@@ -26,7 +26,7 @@ type (
         CouponIds  []int64 `json:"couponIds,optional"`
         OrderId    int64   `json:"orderId"`
     }
-    
+
     // Response types
     PlaceOrderResp {
         OrderId     int64  `json:"orderId"`
@@ -58,11 +58,13 @@ service trade-api {
 ### 必需注解
 
 1. **@doc**：所有接口必须包含文档注释
+
    ```go
    @doc "用户下单接口，支持多课程和优惠券"
    ```
 
 2. **@handler**：指定处理函数名
+
    ```go
    @handler PlaceOrder
    ```
@@ -140,10 +142,10 @@ func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (
     if err := s.validateRequest(req); err != nil {
         return nil, err
     }
-    
+
     // 2. 业务逻辑
     // ...
-    
+
     // 3. 返回结果
     return &PlaceOrderResponse{
         OrderId: orderId,
@@ -163,11 +165,11 @@ func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (
 func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (*PlaceOrderResponse, error) {
     // 从 context 获取请求 ID
     requestID := ctx.Value("request_id").(string)
-    
+
     // 设置超时
     ctx, cancel := context.WithTimeout(ctx, 5*time.Second)
     defer cancel()
-    
+
     // ...
 }
 ```
@@ -207,13 +209,13 @@ func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (
         logx.WithContext(ctx).Errorf("Invalid user_id: %d", req.UserId)
         return nil, errors.New(ErrCodeInvalidParam, "invalid user_id")
     }
-    
+
     // 业务逻辑错误
     if err := s.processOrder(ctx, req); err != nil {
         logx.WithContext(ctx).Errorf("Failed to process order: %v", err)
         return nil, err
     }
-    
+
     // ...
 }
 ```
@@ -307,4 +309,3 @@ goctl model mysql datasource -url="user:password@tcp(host:port)/database" -table
 - [Go-Zero 官方文档](https://go-zero.dev/)
 - [Go-Zero 示例项目](https://github.com/zeromicro/zero-examples)
 - [项目架构设计文档](../design/architecture.md)
-

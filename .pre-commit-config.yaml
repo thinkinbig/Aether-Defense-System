@@ -14,6 +14,8 @@ repos:
       - id: check-yaml
         args: [--unsafe]  # Allow custom YAML tags
       - id: check-json
+        # VS Code config files use JSON with comments (JSONC), so skip them here
+        exclude: ^\.vscode/
       - id: check-toml
       - id: check-added-large-files
         args: [--maxkb=1000]
@@ -29,7 +31,8 @@ repos:
     rev: v0.5.1
     hooks:
       - id: go-cyclo
-        args: [--maxcyclo=15]  # Max cyclomatic complexity
+        # Newer gocyclo uses -over instead of -maxcyclo
+        args: [--over=15]  # Max cyclomatic complexity threshold
       - id: go-unit-tests
         args: [-race, -short]  # Run tests with race detection
       - id: go-mod-tidy
@@ -64,7 +67,13 @@ repos:
     rev: v0.38.0
     hooks:
       - id: markdownlint
-        args: [--fix]
+        # Auto-fix basic issues; relax some noisy rules for long, spec-style docs
+        args:
+          - --fix
+          - --disable
+          - MD013 # line length
+          - --disable
+          - MD041 # first line should be a top-level heading (templates start with H2)
         exclude: ^(CHANGELOG\.md|LICENSE)$
 
 # Global configuration
