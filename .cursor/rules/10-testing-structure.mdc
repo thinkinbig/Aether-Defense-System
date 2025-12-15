@@ -17,12 +17,12 @@ service/
       order.go              # Source code
       order_test.go         # Unit test (corresponds to order.go)
       promotion.proto       # Proto definition
-      
+
 common/
   snowflake/
     generator.go            # Source code
     generator_test.go       # Unit test (corresponds to generator.go)
-    
+
 cmd/
   api/
     trade-api/
@@ -38,11 +38,22 @@ cmd/
 
 #### Unit Test Requirements
 
-- ✅ Every exported function/method must have corresponding tests
+- ✅ Every **业务逻辑相关的** exported function/method 必须有对应测试（特别是 `internal/logic`）
 - ✅ Test both success and error paths
 - ✅ Test boundary conditions and edge values
 - ✅ Use mocks to isolate external dependencies (database, Redis, MQ, other services)
-- ✅ Test coverage target: core business logic > 80%
+- ✅ Test coverage target: **core business logic (`internal/logic`) > 80%**
+
+#### What We Explicitly Do NOT Test (to avoid fake coverage)
+
+- ❌ **Pure data structures / DTOs / Proto-generated types**
+  - Structs that only contain fields and no logic (e.g., request/response messages) should not have tests written *just* for coverage.
+- ❌ **Auto-generated gRPC code / goctl-generated server & client stubs**
+  - Files like `*_grpc.pb.go`, `*_pb.go`, `internal/server/*`, and `*/{user,trade,promotion}service/*` that only perform a single, simple delegation call.
+- ❌ **Placeholder implementations with only logging + fixed return values**
+  - These are scaffolding and will be replaced by real business logic; do not write tests purely to increase coverage.
+
+> Rule: **Write tests for behavior, not merely for the existence of types.**
 
 For **detailed strategies on designing edge cases and covering all logical branches** (equivalence classes, boundary values, table-driven tests, meaningful assertions), see `11-testing-strategy.mdc`.
 
@@ -55,7 +66,7 @@ package rpc
 import (
     "context"
     "testing"
-    
+
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/mock"
 )
@@ -70,10 +81,10 @@ func TestTradeService_PlaceOrder_Success(t *testing.T) {
         CourseIds:  []int64{1, 2},
         RealAmount: 10000,
     }
-    
+
     // Act
     resp, err := service.PlaceOrder(ctx, req)
-    
+
     // Assert
     assert.NoError(t, err)
     assert.NotNil(t, resp)
@@ -90,10 +101,10 @@ func TestTradeService_PlaceOrder_InvalidUserId(t *testing.T) {
         CourseIds:  []int64{1},
         RealAmount: 10000,
     }
-    
+
     // Act
     resp, err := service.PlaceOrder(ctx, req)
-    
+
     // Assert
     assert.Error(t, err)
     assert.Nil(t, resp)
@@ -146,7 +157,7 @@ package trade
 import (
     "context"
     "testing"
-    
+
     "github.com/stretchr/testify/assert"
     "github.com/stretchr/testify/require"
 )
@@ -156,7 +167,7 @@ func TestIntegration_OrderFlow_PlaceAndPay(t *testing.T) {
     ctx := context.Background()
     setup := setupTestEnvironment(t)
     defer setup.Cleanup()
-    
+
     // Act: Execute complete business flow
     // 1. Create order
     orderResp, err := setup.TradeService.PlaceOrder(ctx, &PlaceOrderRequest{
@@ -166,17 +177,17 @@ func TestIntegration_OrderFlow_PlaceAndPay(t *testing.T) {
         RealAmount: 10000,
     })
     require.NoError(t, err)
-    
+
     // 2. Pay order
     payResp, err := setup.PaymentService.ProcessPayment(ctx, &PaymentRequest{
         OrderId: orderResp.OrderId,
         Amount:  orderResp.PayAmount,
     })
-    
+
     // Assert: Verify complete flow
     assert.NoError(t, err)
     assert.Equal(t, PaymentStatusSuccess, payResp.Status)
-    
+
     // Verify database state
     order, err := setup.OrderRepo.GetByID(ctx, orderResp.OrderId)
     assert.NoError(t, err)
@@ -192,7 +203,7 @@ package integration
 
 import (
     "testing"
-    
+
     "github.com/testcontainers/testcontainers-go"
     "github.com/testcontainers/testcontainers-go/modules/mysql"
     "github.com/testcontainers/testcontainers-go/modules/redis"
@@ -214,25 +225,25 @@ func setupTestEnvironment(t *testing.T) *TestSetup {
         mysql.WithPassword("test"),
     )
     require.NoError(t, err)
-    
+
     redisContainer, err := redis.RunContainer(ctx,
         testcontainers.WithImage("redis:7-alpine"),
     )
     require.NoError(t, err)
-    
+
     // Get connection info and initialize services
     // ...
-    
+
     setup := &TestSetup{
         // Initialize connections and services
     }
-    
+
     // Use t.Cleanup to ensure resource cleanup
     t.Cleanup(func() {
         mysqlContainer.Terminate(ctx)
         redisContainer.Terminate(ctx)
     })
-    
+
     return setup
 }
 ```
@@ -343,10 +354,10 @@ func TestTradeService_PlaceOrder_SendsMQMessage(t *testing.T) {
     mockMQ.On("SendHalfMessage", mock.Anything, mock.MatchedBy(func(msg *OrderMessage) bool {
         return msg.OrderId == 123 && msg.UserId == 456
     })).Return(nil)
-    
+
     service := &TradeService{mq: mockMQ}
     service.PlaceOrder(ctx, req)
-    
+
     // Verify message was sent
     mockMQ.AssertExpectations(t)
     mockMQ.AssertNumberOfCalls(t, "SendHalfMessage", 1)
@@ -367,10 +378,10 @@ func TestTradeService_PlaceOrder_WithCoupon(t *testing.T) {
     stubPromotion.StubGetCoupon = func(ctx context.Context, couponID int64) (*Coupon, error) {
         return &Coupon{ID: couponID, Discount: 1000}, nil
     }
-    
+
     service := &TradeService{promotionClient: stubPromotion}
     resp, err := service.PlaceOrder(ctx, req)
-    
+
     // Only verify business logic, don't verify if GetCoupon was called
     assert.NoError(t, err)
     assert.Equal(t, int32(9000), resp.PayAmount) // Original price 10000 - discount 1000
@@ -446,10 +457,10 @@ func TestTradeService_PlaceOrder_WithCoupon(t *testing.T) {
     mockPromotion.On("GetCoupon", mock.Anything, int64(1)).
         Return(&Coupon{ID: 1, Discount: 1000}, nil).
         Once() // Verify called only once
-    
+
     service := &TradeService{promotionClient: mockPromotion}
     resp, err := service.PlaceOrder(ctx, req)
-    
+
     assert.NoError(t, err)
     mockPromotion.AssertExpectations(t) // Verify all expected calls occurred
 }
@@ -505,7 +516,7 @@ func TestTradeService_PlaceOrder_WithCoupon(t *testing.T) {
     stubPromotion.GetCouponFunc = func(ctx context.Context, couponID int64) (*Coupon, error) {
         return &Coupon{ID: couponID, Discount: 1000}, nil
     }
-    
+
     service := &TradeService{promotionClient: stubPromotion}
     // ... test code
 }
@@ -612,21 +623,21 @@ func TestTradeService_PlaceOrder_CompleteFlow(t *testing.T) {
     mockUserClient.On("GetUser", mock.Anything, int64(123)).
         Return(&User{ID: 123, Status: "active"}, nil).
         Once()
-    
+
     stubPromotion := &stubs.PromotionClientStub{}
     stubPromotion.GetCouponFunc = func(ctx context.Context, couponID int64) (*Coupon, error) {
         return &Coupon{ID: couponID, Discount: 1000}, nil
     }
-    
+
     mockOrderRepo := mocks.NewOrderRepository(t)
     mockOrderRepo.On("Create", mock.Anything, mock.MatchedBy(func(order *Order) bool {
         return order.UserId == 123 && order.Amount == 9000
     })).Return(int64(456), nil).Once()
-    
+
     mockMQ := mocks.NewMessageQueue(t)
     mockMQ.On("SendHalfMessage", mock.Anything, mock.AnythingOfType("*OrderMessage")).
         Return(nil).Once()
-    
+
     // Create service instance
     service := NewTradeService(
         stubPromotion,    // Stub: Only need return value
@@ -634,7 +645,7 @@ func TestTradeService_PlaceOrder_CompleteFlow(t *testing.T) {
         mockOrderRepo,    // Mock: Need to verify calls
         mockMQ,           // Mock: Need to verify message sending
     )
-    
+
     // Act
     resp, err := service.PlaceOrder(ctx, &PlaceOrderRequest{
         UserId:     123,
@@ -642,12 +653,12 @@ func TestTradeService_PlaceOrder_CompleteFlow(t *testing.T) {
         CouponIds:  []int64{1},
         RealAmount: 10000,
     })
-    
+
     // Assert
     assert.NoError(t, err)
     assert.Equal(t, int64(456), resp.OrderId)
     assert.Equal(t, int32(9000), resp.PayAmount)
-    
+
     // Verify all Mock expectations are met
     mockUserClient.AssertExpectations(t)
     mockOrderRepo.AssertExpectations(t)

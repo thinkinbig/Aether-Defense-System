@@ -113,7 +113,21 @@ jobs:
 
       - name: Generate coverage report
         run: |
-          go test -race -short -coverprofile=coverage.out -covermode=atomic ./...
+          # Focus coverage on core business logic (internal/logic) and ignore data-only / generated code
+          logic_pkgs=$(go list ./service/... | grep '/internal/logic$' || true)
+          if [ -z "$logic_pkgs" ]; then
+            echo "No internal/logic packages found; skipping coverage check."
+            exit 0
+          fi
+
+          # Build comma-separated list for -coverpkg
+          coverpkg=$(echo "$logic_pkgs" | tr '\n' ',' | sed 's/,$//')
+
+          echo "Running coverage for packages:"
+          echo "$logic_pkgs"
+          echo "Using -coverpkg=${coverpkg}"
+
+          go test -race -short -coverprofile=coverage.out -covermode=atomic -coverpkg="${coverpkg}" $logic_pkgs
           go tool cover -html=coverage.out -o coverage.html
 
       - name: Check coverage threshold

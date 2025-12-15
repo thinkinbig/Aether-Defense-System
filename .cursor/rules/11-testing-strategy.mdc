@@ -185,23 +185,35 @@ We recommend writing this checklist as `// TODO(test):` comments near the tests 
 
 ### 6. Coverage Expectations (Per Layer)
 
-We refine coverage expectations per layer:
+We refine coverage expectations per layer, and explicitly avoid meaningless coverage for data-only / generated code:
 
 - **`internal/logic` (business logic):**
   - **Target**: ≥ 80% line coverage, including:
     - All validations
     - All branches
-    - Error paths
+    - All error paths
+  - This is where we invest most of our testing effort.
+
 - **`internal/svc` (wiring / DI):**
   - **Target**: Light sanity tests (constructor works, no panic)
   - No strict coverage requirement beyond sanity tests.
-- **`rpc` handlers (thin wrappers over logic):**
-  - Prefer testing via logic layer.
-  - For complex mapping (DTO ↔ domain), write focused tests.
+
+- **Top-level `rpc` services (e.g. `service/*/rpc/*.go` that only log + delegate):**
+  - If they only log and directly call `internal/logic` or return a fixed placeholder, **we do NOT require separate tests just for coverage**.
+  - Only when they contain non-trivial logic (validation, mapping, branching) do we add dedicated tests.
+
+- **`internal/server` (goctl-generated gRPC server stubs):**
+  - When they are just one-hop delegates like `NewXxxLogic(...).Method(req)`, **no coverage requirement** as long as the logic layer is covered.
+  - If server layer introduces extra behavior (e.g. metadata/tenant extraction), that behavior should be tested.
+
+- **Client wrapper packages (e.g. `*/{user,trade,promotion}service`):**
+  - These are usually goctl-generated `defaultXxxService` that forward to the gRPC client.
+  - By default **no coverage requirement**; only when we add retries/circuit-breaking/mapping logic do we write tests.
 
 **CI Policy Idea (future):**
 
-- Enforce high coverage only on `internal/logic` packages.
+- Enforce high coverage **only on `*/internal/logic` packages**.
+- Treat overall project coverage as a reference, not a hard gate for data-only / generated layers.
 
 ---
 
@@ -231,7 +243,6 @@ We are pragmatic on:
 - Thin wrappers, wiring code, simple DTO mappers.
 - Temporary trivial tests early in development, as long as they are replaced with meaningful tests before feature is considered "done".
 
-If in doubt, ask:  
-**“If this test fails, will it indicate a real user-facing or business logic regression?”**  
+If in doubt, ask:
+**“If this test fails, will it indicate a real user-facing or business logic regression?”**
 If the answer is **no**, re-think the test.
-
