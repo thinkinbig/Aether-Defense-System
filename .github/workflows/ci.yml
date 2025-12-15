@@ -39,12 +39,14 @@ jobs:
 
       - name: Check import formatting
         run: |
-          unformatted=$(goimports -l .)
+          # Exclude generated files from import check
+          unformatted=$(goimports -l . | grep -v "\.pb\.go$" | grep -v "\.pb_grpc\.go$" | grep -v "_gen\.go$" || true)
           if [ -n "$unformatted" ]; then
             echo "The following files have incorrect imports:"
             echo "$unformatted"
             exit 1
           fi
+          echo "All imports are correctly formatted (excluding generated files)"
 
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v4
