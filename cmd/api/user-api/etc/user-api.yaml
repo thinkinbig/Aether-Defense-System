@@ -5,5 +5,9 @@ Port: 8888
 UserRpc:
   Etcd:
     Hosts:
+<<<<<<< HEAD
       - aether-defense-etcd-headless:2379
+=======
+      - 127.0.0.1:2379
+>>>>>>> fce7884 (chore: update user-api to use etcd service discovery)
     Key: user.rpc
