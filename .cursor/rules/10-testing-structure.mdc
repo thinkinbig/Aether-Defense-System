@@ -44,6 +44,8 @@ cmd/
 - ✅ Use mocks to isolate external dependencies (database, Redis, MQ, other services)
 - ✅ Test coverage target: core business logic > 80%
 
+For **detailed strategies on designing edge cases and covering all logical branches** (equivalence classes, boundary values, table-driven tests, meaningful assertions), see `11-testing-strategy.mdc`.
+
 #### Unit Test Example
 
 ```go
@@ -653,6 +655,8 @@ func TestTradeService_PlaceOrder_CompleteFlow(t *testing.T) {
 }
 ```
 
+For **how to choose between Mock and Stub and compose them into meaningful scenarios**, see `11-testing-strategy.mdc`.
+
 ## Testing Best Practices
 
 1. **Test Isolation**: Each test should be independent and not depend on execution order of other tests
@@ -669,3 +673,5 @@ func TestTradeService_PlaceOrder_CompleteFlow(t *testing.T) {
 - **Integration Tests**: Critical business flow coverage > 60%
 - Use `go test -cover` to check coverage
 - CI/CD should set coverage threshold checks
+
+For **layer-specific coverage expectations** (e.g., `internal/logic` vs `internal/svc` vs `rpc`) and how to prioritize coverage effort, see `11-testing-strategy.mdc`.

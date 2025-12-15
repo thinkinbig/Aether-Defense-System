@@ -1,0 +1,237 @@
+## Testing Strategy and Meaningful Coverage
+
+This document refines **how** we design tests: edge cases, branch coverage, and making tests meaningful (not just increasing the coverage number).
+
+### 1. What Every Test MUST Answer
+
+For every test you write, you MUST be able to answer clearly:
+
+- **What behavior is being verified?**
+- **Which input class / edge / branch is this covering?**
+- **What bug would this test catch if someone broke the code later?**
+
+If you cannot answer these three questions, the test is probably not meaningful.
+
+---
+
+### 2. Edge Case Testing
+
+#### 2.1 Identify Input Domains and Equivalence Classes
+
+For each function / method:
+
+- **List the inputs:**
+  - Parameters (IDs, amounts, slices, enums, timestamps, etc.)
+  - External state (e.g., current time, feature flags, config)
+- **Group inputs into equivalence classes**, e.g.:
+  - `userId`: `{<= 0}`, `{> 0}`
+  - `amount`: `{< 0}`, `{0}`, `{> 0}`
+  - `slice`: `{len == 0}`, `{len == 1}`, `{len > 1}`
+  - `status`: `{Pending}`, `{Paid}`, `{Canceled}`, `{Unknown}`
+
+For each class, pick **at least one representative** and test it.
+
+#### 2.2 Boundary Values
+
+Always test boundaries around validations and ranges:
+
+- If we require `userId > 0`:
+  - Test `0` (invalid)
+  - Test `-1` (invalid)
+  - Test `1` (valid)
+- If we require `amount >= 1 && amount <= 1_000_000`:
+  - Test `0`, `1`, `1_000_000`, `1_000_001`
+
+**Rule:** Whenever you see a comparison (`<`, `<=`, `>`, `>=`, `==`), you MUST have tests that hit both sides and the boundary.
+
+#### 2.3 Error Paths
+
+For each function that can return `error`:
+
+- **At least one success test**
+- **At least one error test for each distinct failure reason**, e.g. for `PlaceOrder`:
+  - `InvalidUserId`
+  - `InvalidOrderId`
+  - `EmptyCourseIds`
+  - `InvalidRealAmount`
+  - Downstream dependency failure (DB, Redis, MQ, RPC)
+
+**Do NOT** only test the happy path.
+
+---
+
+### 3. Branch Coverage Strategy
+
+We want **logical branch coverage**, not just line coverage.
+
+#### 3.1 Enumerate Branches
+
+For any non-trivial function:
+
+- Look at each `if`, `switch`, `for`, `return`-early path.
+- Write down the branches in comments (or in your test file), e.g.:
+
+```go
+// Branches for PlaceOrder:
+// 1) userId <= 0           -> error
+// 2) orderId <= 0          -> error
+// 3) len(courseIds) == 0   -> error
+// 4) realAmount <= 0       -> error
+// 5) all validations pass  -> success
+```
+
+Then ensure you have **at least one test** per branch.
+
+#### 3.2 Table-Driven Tests for Branches
+
+For functions with many branches, ALWAYS use table-driven tests:
+
+```go
+func TestTradeService_PlaceOrder_Validation(t *testing.T) {
+    tests := []struct {
+        name      string
+        req       *PlaceOrderRequest
+        wantErr   bool
+        errSubstr string
+    }{
+        {
+            name: "invalid userId",
+            req:  &PlaceOrderRequest{UserId: 0, OrderId: 1, CourseIds: []int64{1}, RealAmount: 100},
+            wantErr: true, errSubstr: "invalid user_id",
+        },
+        // ... other branches
+        {
+            name: "success",
+            req:  &PlaceOrderRequest{UserId: 1, OrderId: 1, CourseIds: []int64{1}, RealAmount: 100},
+            wantErr: false,
+        },
+    }
+
+    svc := &TradeService{}
+    ctx := context.Background()
+
+    for _, tt := range tests {
+        t.Run(tt.name, func(t *testing.T) {
+            resp, err := svc.PlaceOrder(ctx, tt.req)
+            if tt.wantErr {
+                require.Error(t, err)
+                if tt.errSubstr != "" {
+                    require.Contains(t, err.Error(), tt.errSubstr)
+                }
+                require.Nil(t, resp)
+            } else {
+                require.NoError(t, err)
+                require.NotNil(t, resp)
+            }
+        })
+    }
+}
+```
+
+**Rule:** For functions with 3+ branches, table-driven tests are REQUIRED.
+
+---
+
+### 4. Making Tests Meaningful (Not Just Increasing Coverage)
+
+#### 4.1 Avoid Trivial / Tautological Tests
+
+Bad (meaningless) tests:
+
+- Just calling getters/setters without any behavior:
+  - `TestGetUserLogic_NewGetUserLogic_NotNil` – only checks constructor returns non-nil, no behavior.
+- Asserting constants:
+  - `assert.Equal(t, 1, 1)`
+- Mirroring implementation logic exactly without checking behavior:
+  - Re-implement the same calculation inside the test and compare to itself.
+
+We ONLY accept trivial tests in **very early scaffolding**, and they should be replaced soon.
+
+#### 4.2 Behavior-Focused Assertions
+
+Prefer assertions that:
+
+- Check **observable behavior**:
+  - Returned DTO fields
+  - State changes (e.g., order status, stock count)
+  - Side effects (message sent, log emitted, cache updated) via mocks
+- Check **invariants**:
+  - Order total must equal sum of item prices minus discounts
+  - Stock must never go negative
+
+Avoid:
+
+- Overfitting to internal implementation (e.g., verifying private helper function behavior directly instead of through public API), unless it's a complex algorithm.
+
+---
+
+### 5. Edge Case Checklist (Per Feature)
+
+For each new feature (e.g., `PlaceOrder`, `CancelOrder`, `GetUser`, `DecrStock`), your test plan MUST at least cover:
+
+- **Valid cases:**
+  - Typical success scenario
+  - Boundary success (e.g., minimum valid amount, minimum valid list size)
+- **Invalid cases:**
+  - All validation failures (each error path once)
+  - Unauthorized / forbidden cases (if applicable)
+- **Concurrency / idempotency (where relevant):**
+  - Repeated calls with same input (idempotent behavior)
+  - Race-like scenarios via multiple goroutines when logic is concurrency-sensitive
+
+We recommend writing this checklist as `// TODO(test):` comments near the tests or as a short section in the PR description.
+
+---
+
+### 6. Coverage Expectations (Per Layer)
+
+We refine coverage expectations per layer:
+
+- **`internal/logic` (business logic):**
+  - **Target**: ≥ 80% line coverage, including:
+    - All validations
+    - All branches
+    - Error paths
+- **`internal/svc` (wiring / DI):**
+  - **Target**: Light sanity tests (constructor works, no panic)
+  - No strict coverage requirement beyond sanity tests.
+- **`rpc` handlers (thin wrappers over logic):**
+  - Prefer testing via logic layer.
+  - For complex mapping (DTO ↔ domain), write focused tests.
+
+**CI Policy Idea (future):**
+
+- Enforce high coverage only on `internal/logic` packages.
+
+---
+
+### 7. When to Add/Update Tests
+
+For EVERY code change:
+
+- If you add a new branch, validation, or error path → **add corresponding tests**.
+- If you fix a bug:
+  - First write a failing test that reproduces the bug.
+  - Then fix the code and ensure the test passes.
+- If you refactor:
+  - Ensure existing tests still pass (no behavior change).
+  - If behavior changes, update tests (and document why).
+
+---
+
+### 8. Trade-offs and Pragmatism
+
+We are strict on:
+
+- **Core business logic** (`internal/logic`): must be well tested.
+- **Validation & edge cases**: must have tests.
+
+We are pragmatic on:
+
+- Thin wrappers, wiring code, simple DTO mappers.
+- Temporary trivial tests early in development, as long as they are replaced with meaningful tests before feature is considered "done".
+
+If in doubt, ask:  
+**“If this test fails, will it indicate a real user-facing or business logic regression?”**  
+If the answer is **no**, re-think the test.
+
