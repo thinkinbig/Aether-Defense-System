@@ -13,6 +13,7 @@ repos:
       - id: end-of-file-fixer
       - id: check-yaml
         args: [--unsafe]  # Allow custom YAML tags
+        exclude: ^deploy/helm/.*/templates/.*\.yaml$  # Exclude Helm templates
       - id: check-json
         # VS Code config files use JSON with comments (JSONC), so skip them here
         exclude: ^\.vscode/
@@ -60,7 +61,7 @@ repos:
     hooks:
       - id: prettier
         types: [yaml]
-        exclude: ^(\.golangci\.yml|\.pre-commit-config\.yaml)$
+        exclude: ^(\.golangci\.yml|\.pre-commit-config\.yaml|deploy/helm/.*/templates/.*\.yaml)$
 
   # Markdown linting
   - repo: https://github.com/igorshubovych/markdownlint-cli

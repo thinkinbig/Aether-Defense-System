@@ -1,0 +1,187 @@
+# Production Deployment - Disaster Recovery & High Availability
+
+## Overview
+
+This document defines mandatory rules for **disaster recovery and high availability** in production deployments. This includes PodDisruptionBudget, multi-replica deployment, pod anti-affinity, health checks, rolling updates, and backup strategies.
+
+**MANDATORY**: All production deployments MUST follow these HA rules.
+
+## 1. Pod Disruption Budget (PDB)
+
+**MANDATORY**: Configure PDB for all critical services.
+
+**Rules**:
+- ✅ **ALWAYS** set PDB for services with multiple replicas
+- ✅ Set `minAvailable` to ensure service availability during disruptions
+- ✅ For production: `minAvailable: 50%` or `minAvailable: 2` (whichever is higher)
+
+**Implementation**:
+```yaml
+# templates/poddisruptionbudget.yaml
+{{- range .Values.services }}
+{{- if and .enabled (gt (int .replicaCount) 1) }}
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-pdb
+spec:
+  minAvailable: {{ .pdb.minAvailable | default "50%" }}
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ .name }}
+{{- end }}
+{{- end }}
+```
+
+## 2. Multi-Replica Deployment
+
+**MANDATORY**: Deploy multiple replicas for all services.
+
+**Production Replica Counts**:
+```yaml
+# values-prod.yaml
+etcd:
+  replicaCount: 3  # Minimum 3 for quorum
+
+userRpc:
+  replicaCount: 3  # Minimum 3 for HA
+
+userApi:
+  replicaCount: 3  # Minimum 3 for HA
+
+tradeRpc:
+  replicaCount: 3
+
+promotionRpc:
+  replicaCount: 3
+```
+
+**Rules**:
+- ✅ **ALWAYS** deploy at least 3 replicas in production
+- ✅ **ALWAYS** distribute replicas across multiple nodes (use podAntiAffinity)
+- ✅ **NEVER** deploy single replica in production
+
+## 3. Pod Anti-Affinity
+
+**MANDATORY**: Distribute pods across nodes for high availability.
+
+**Implementation**:
+```yaml
+# In deployment.yaml
+spec:
+  template:
+    spec:
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - user-api
+              topologyKey: kubernetes.io/hostname
+```
+
+## 4. Health Checks
+
+**MANDATORY**: Configure comprehensive health checks.
+
+**Health Check Requirements**:
+- ✅ **ALWAYS** configure both `livenessProbe` and `readinessProbe`
+- ✅ **ALWAYS** set appropriate timeouts and thresholds
+- ✅ **ALWAYS** use HTTP probes for HTTP services
+- ✅ **ALWAYS** use TCP probes for gRPC services (or gRPC health check)
+
+**Production Health Check Configuration**:
+```yaml
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 30
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+  successThreshold: 1
+
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 5
+  timeoutSeconds: 3
+  failureThreshold: 3
+  successThreshold: 1
+
+startupProbe:  # For slow-starting applications
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 3
+  failureThreshold: 30  # Allow up to 5 minutes for startup
+```
+
+## 5. Rolling Update Strategy
+
+**MANDATORY**: Configure rolling update strategy.
+
+**Production Strategy**:
+```yaml
+# In deployment.yaml
+spec:
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0  # Zero-downtime deployment
+```
+
+**Rules**:
+- ✅ **ALWAYS** use `RollingUpdate` strategy
+- ✅ Set `maxUnavailable: 0` for zero-downtime deployments
+- ✅ Set `maxSurge: 1` to control rollout speed
+
+## 6. Backup Strategy
+
+**MANDATORY**: Implement backup for persistent data.
+
+**Backup Requirements**:
+- ✅ **ALWAYS** backup etcd data regularly
+- ✅ **ALWAYS** test restore procedures
+- ✅ **ALWAYS** store backups in separate location
+- ✅ **ALWAYS** encrypt backups
+
+**etcd Backup**:
+```yaml
+# Use Velero or similar backup tool
+# Schedule daily backups
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: etcd-backup-daily
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  template:
+    includedNamespaces:
+    - aether-defense-prod
+    includedResources:
+    - statefulsets
+    - persistentvolumeclaims
+```
+
+## Important Rules Summary
+
+1. **ALWAYS** configure PodDisruptionBudget for multi-replica services
+2. **ALWAYS** deploy minimum 3 replicas in production
+3. **ALWAYS** use pod anti-affinity to distribute pods across nodes
+4. **ALWAYS** configure health checks (liveness, readiness, startup)
+5. **ALWAYS** use RollingUpdate strategy with zero-downtime configuration
+6. **ALWAYS** implement backup strategy for persistent data
+7. **NEVER** deploy single replica in production

@@ -89,7 +89,7 @@
     "editor.insertSpaces": true,
     "editor.formatOnSave": false
   },
-  "yaml.validate": true,
+  "yaml.validate": false,
   "yaml.schemas": {},
   "[markdown]": {
     "editor.tabSize": 2,

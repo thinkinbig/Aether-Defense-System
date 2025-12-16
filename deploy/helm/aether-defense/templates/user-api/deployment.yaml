@@ -1,0 +1,121 @@
+{{- if .Values.userApi.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-user-api
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-api
+spec:
+  replicas: {{ .Values.userApi.replicaCount }}
+  {{- if .Values.userApi.strategy }}
+  strategy:
+    type: {{ .Values.userApi.strategy.type }}
+    {{- if .Values.userApi.strategy.rollingUpdate }}
+    rollingUpdate:
+      maxSurge: {{ .Values.userApi.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.userApi.strategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: user-api
+  template:
+    metadata:
+      labels:
+        {{- include "aether-defense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: user-api
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "aether-defense.fullname" . }}-userapi-sa
+      {{- end }}
+      securityContext:
+        runAsNonRoot: {{ .Values.security.runAsNonRoot }}
+        runAsUser: {{ .Values.security.runAsUser }}
+        fsGroup: {{ .Values.security.fsGroup }}
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.userApi.podAntiAffinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - user-api
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      containers:
+      - name: user-api
+        image: "{{ .Values.global.imageRegistry }}{{ .Values.userApi.image.repository }}:{{ .Values.userApi.image.tag }}"
+        imagePullPolicy: {{ .Values.userApi.image.pullPolicy }}
+        command:
+        - /app/user-api
+        - -f
+        - /etc/user-api/user-api.yaml
+        ports:
+        - name: http
+          containerPort: {{ .Values.userApi.service.targetPort }}
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: {{ .Values.security.allowPrivilegeEscalation }}
+          readOnlyRootFilesystem: {{ .Values.security.readOnlyRootFilesystem }}
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: {{ .Values.security.runAsNonRoot }}
+          runAsUser: {{ .Values.security.runAsUser }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/user-api
+          readOnly: true
+        {{- if .Values.security.readOnlyRootFilesystem }}
+        - name: tmp
+          mountPath: /tmp
+        - name: var-run
+          mountPath: /var/run
+        {{- end }}
+        resources:
+          {{- toYaml .Values.userApi.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /health
+            port: http
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "aether-defense.fullname" . }}-user-api-config
+      {{- if .Values.security.readOnlyRootFilesystem }}
+      - name: tmp
+        emptyDir: {}
+      - name: var-run
+        emptyDir: {}
+      {{- end }}
+{{- end }}

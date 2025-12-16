@@ -8,6 +8,12 @@ node_modules/
 bin/
 *.exe
 *.test
+user-api
+cmd/api/user-api/user-api
+cmd/rpc/user-rpc/user-rpc
+cmd/api/trade-api/trade-api
+cmd/rpc/trade-rpc/trade-rpc
+cmd/rpc/promotion-rpc/promotion-rpc
 
 # Go coverage artifacts
 coverage.out

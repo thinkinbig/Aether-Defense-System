@@ -1,0 +1,20 @@
+{{- if .Values.userApi.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-user-api-config
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-api
+data:
+  user-api.yaml: |
+    Name: {{ .Values.userApi.config.name }}
+    Host: {{ .Values.userApi.config.host }}
+    Port: {{ .Values.userApi.config.port }}
+
+    UserRpc:
+      Etcd:
+        Hosts:
+          - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
+        Key: {{ .Values.userApi.config.userRpc.etcd.key }}
+{{- end }}

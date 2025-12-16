@@ -1,0 +1,191 @@
+# Production Deployment - Checklist & Quick Reference
+
+## Overview
+
+This document provides **production deployment checklist**, monitoring configuration, and quick reference commands for Helm deployments.
+
+**MANDATORY**: Complete this checklist before every production deployment.
+
+## 1. Monitoring & Observability
+
+### Prometheus Metrics
+
+**MANDATORY**: Expose Prometheus metrics for all services.
+
+**ServiceMonitor Configuration**:
+```yaml
+# templates/servicemonitor.yaml
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-{{ .name }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: {{ .name }}
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+```
+
+### Logging
+
+**MANDATORY**: Configure structured logging and log aggregation.
+
+**Rules**:
+- ✅ **ALWAYS** use structured logging (JSON format)
+- ✅ **ALWAYS** include correlation IDs in logs
+- ✅ **ALWAYS** ship logs to centralized logging system
+- ✅ **ALWAYS** set appropriate log levels
+
+### Alerting
+
+**MANDATORY**: Configure alerts for critical metrics.
+
+**Required Alerts**:
+- Pod crash loop
+- High error rate (> 1%)
+- High latency (P99 > 100ms)
+- Resource exhaustion (CPU > 90%, Memory > 90%)
+- Service unavailable
+- etcd cluster health
+
+## 2. Production Deployment Checklist
+
+### Pre-Deployment
+
+- [ ] All tests pass (unit, integration, E2E)
+- [ ] Helm chart validated: `helm lint ./deploy/helm/aether-defense`
+- [ ] Helm chart tested: `helm test aether-defense`
+- [ ] Security scan passed (images, dependencies)
+- [ ] Code review completed and approved
+- [ ] Documentation updated
+- [ ] Rollback plan documented
+
+### Configuration
+
+- [ ] Environment-specific values file reviewed
+- [ ] Resource limits configured appropriately
+- [ ] Security contexts configured
+- [ ] Network policies configured
+- [ ] RBAC configured
+- [ ] Secrets properly configured
+- [ ] Image tags are specific (not "latest")
+
+### High Availability
+
+- [ ] Minimum 3 replicas for all services
+- [ ] PodDisruptionBudget configured
+- [ ] Pod anti-affinity configured
+- [ ] Health checks configured (liveness, readiness, startup)
+- [ ] Rolling update strategy configured
+
+### Monitoring
+
+- [ ] Prometheus metrics exposed
+- [ ] ServiceMonitor configured
+- [ ] Alerts configured
+- [ ] Logging configured
+- [ ] Dashboard created
+
+### Deployment
+
+- [ ] Deployed to staging first
+- [ ] Staging tests passed
+- [ ] Canary deployment plan ready
+- [ ] Rollback procedure tested
+- [ ] Team notified of deployment
+
+### Post-Deployment
+
+- [ ] All pods running and healthy
+- [ ] Health checks passing
+- [ ] Metrics within expected ranges
+- [ ] No errors in logs
+- [ ] Smoke tests passed
+- [ ] Canary traffic monitoring active
+
+## 3. Quick Reference
+
+### Deployment Commands
+
+```bash
+# Lint chart
+helm lint ./deploy/helm/aether-defense
+
+# Dry-run
+helm install aether-defense ./deploy/helm/aether-defense \
+  -f values-prod.yaml \
+  --dry-run --debug
+
+# Install
+helm install aether-defense ./deploy/helm/aether-defense \
+  -f values-prod.yaml \
+  -n aether-defense-prod --create-namespace
+
+# Upgrade
+helm upgrade aether-defense ./deploy/helm/aether-defense \
+  -f values-prod.yaml \
+  -n aether-defense-prod
+
+# Rollback
+helm rollback aether-defense <revision> -n aether-defense-prod
+
+# Test
+helm test aether-defense -n aether-defense-prod
+
+# Uninstall
+helm uninstall aether-defense -n aether-defense-prod
+```
+
+### Verification Commands
+
+```bash
+# Check pods
+kubectl get pods -n aether-defense-prod
+
+# Check services
+kubectl get svc -n aether-defense-prod
+
+# Check deployments
+kubectl get deployments -n aether-defense-prod
+
+# Check HPA
+kubectl get hpa -n aether-defense-prod
+
+# Check PDB
+kubectl get pdb -n aether-defense-prod
+
+# Check resource usage
+kubectl top pods -n aether-defense-prod
+
+# Check events
+kubectl get events -n aether-defense-prod --sort-by='.lastTimestamp'
+```
+
+## 4. Important Rules Summary
+
+1. **ALWAYS** use environment-specific namespaces
+2. **ALWAYS** configure NetworkPolicy and RBAC
+3. **ALWAYS** set resource limits and quotas
+4. **ALWAYS** configure SecurityContext (runAsNonRoot, readOnlyRootFilesystem)
+5. **ALWAYS** deploy minimum 3 replicas in production
+6. **ALWAYS** configure PodDisruptionBudget
+7. **ALWAYS** configure health checks (liveness, readiness, startup)
+8. **ALWAYS** test in staging before production
+9. **ALWAYS** use canary deployment for production releases
+10. **ALWAYS** monitor metrics and logs
+11. **NEVER** use `latest` tag in production
+12. **NEVER** hardcode secrets
+13. **NEVER** deploy single replica in production
+14. **NEVER** skip security configurations
+
+## 5. References
+
+- [Kubernetes Production Best Practices](https://kubernetes.io/docs/setup/best-practices/)
+- [Helm Best Practices](https://helm.sh/docs/chart_best_practices/)
+- [CNCF Security Best Practices](https://www.cncf.io/blog/2021/08/03/kubernetes-security-best-practices/)
+- [Kubernetes Network Policies](https://kubernetes.io/docs/concepts/services-networking/network-policies/)
+- [Pod Disruption Budgets](https://kubernetes.io/docs/tasks/run-application/configure-pdb/)

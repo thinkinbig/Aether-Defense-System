@@ -1,0 +1,27 @@
+{{- if and .Values.monitoring.enabled .Values.monitoring.serviceMonitor.enabled }}
+{{- $services := list "userRpc" "userApi" "tradeRpc" "promotionRpc" }}
+{{- range $serviceName := $services }}
+{{- $service := index $.Values $serviceName }}
+{{- if and $service (hasKey $service "enabled") $service.enabled (hasKey $service "service") }}
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ $serviceName | lower }}
+  namespace: {{ $.Values.global.namespace | default (include "aether-defense.namespace" $) }}
+  labels:
+    {{- include "aether-defense.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $serviceName }}
+  endpoints:
+  - port: {{ if eq $serviceName "userApi" }}http{{ else }}grpc{{ end }}
+    path: /metrics
+    interval: {{ $.Values.monitoring.serviceMonitor.interval }}
+    scrapeTimeout: {{ $.Values.monitoring.serviceMonitor.scrapeTimeout }}
+{{- end }}
+{{- end }}
+{{- end }}

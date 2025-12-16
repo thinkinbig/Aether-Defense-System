@@ -28,3 +28,12 @@ This is a high-concurrency microservices system built with Go-Zero framework, ha
   - What local tools/commands the AI may run (`go test`, `golangci-lint`, `pre-commit`, coverage commands, etc.)
   - How the AI must follow the same development and git workflows as humans
   - How the AI may use GitHub MCP (read-only PR/CI/issue access) within this project
+
+## Production Deployment Rules
+
+- See `13-production-deployment-isolation.mdc` for environment isolation (namespaces, network policies, RBAC)
+- See `14-production-deployment-security.mdc` for resource limits and security (ResourceQuota, SecurityContext, secrets)
+- See `15-production-deployment-ha.mdc` for disaster recovery and high availability (PDB, multi-replica, health checks)
+- See `16-production-deployment-testing.mdc` for Helm chart testing strategies
+- See `17-production-deployment-canary.mdc` for canary deployment and rollout strategies
+- See `18-production-deployment-checklist.mdc` for deployment checklist, monitoring, and quick reference

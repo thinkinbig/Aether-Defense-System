@@ -1,0 +1,39 @@
+# Development environment overrides
+global:
+  namespace: aether-defense-dev
+
+# Development: Lower resource requirements
+etcd:
+  replicaCount: 1
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+    limits:
+      cpu: 200m
+      memory: 256Mi
+
+userRpc:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+userApi:
+  replicaCount: 1
+  autoscaling:
+    enabled: false
+
+# Development: Disable strict security for easier debugging
+security:
+  readOnlyRootFilesystem: false
+
+# Development: Disable resource quotas
+resourceQuota:
+  enabled: false
+
+limitRange:
+  enabled: false
+
+# Development: Disable network policies for easier debugging
+networkPolicy:
+  enabled: false

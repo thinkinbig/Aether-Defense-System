@@ -1,0 +1,274 @@
+# Default values for aether-defense
+# This is a YAML-formatted file.
+
+# Global configuration
+global:
+  imageRegistry: ""
+  imagePullPolicy: IfNotPresent
+  namespace: "" # Will be set per environment
+
+# Security configuration
+security:
+  runAsNonRoot: true
+  runAsUser: 1000
+  fsGroup: 1000
+  readOnlyRootFilesystem: true
+  allowPrivilegeEscalation: false
+
+# Resource quotas (namespace-level)
+resourceQuota:
+  enabled: false
+  requests:
+    cpu: "20"
+    memory: 40Gi
+  limits:
+    cpu: "40"
+    memory: 80Gi
+  persistentvolumeclaims: "10"
+  pods: "50"
+
+# Limit ranges (default container limits)
+limitRange:
+  enabled: false
+  default:
+    cpu: "500m"
+    memory: "512Mi"
+  defaultRequest:
+    cpu: "100m"
+    memory: "128Mi"
+
+# etcd configuration
+etcd:
+  enabled: true
+  replicaCount: 1
+  image:
+    repository: quay.io/coreos/etcd
+    tag: v3.5.15
+    pullPolicy: IfNotPresent
+  # Pod Disruption Budget
+  pdb:
+    minAvailable: "50%"
+  # Pod Anti-Affinity
+  podAntiAffinity: true
+  service:
+    type: ClusterIP
+    headless: true
+    port: 2379
+    clientPort: 2379
+    peerPort: 2380
+  persistence:
+    enabled: true
+    size: 8Gi
+    storageClass: ""
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+  # etcd cluster configuration
+  cluster:
+    name: etcd
+    serviceName: etcd-headless
+    initialClusterState: new
+
+# User RPC service
+userRpc:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: aether-defense/user-rpc
+    tag: latest # Should be specific version in production
+    pullPolicy: IfNotPresent
+  # Pod Disruption Budget
+  pdb:
+    minAvailable: "50%"
+  # Pod Anti-Affinity
+  podAntiAffinity: true
+  # Autoscaling
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+  # Rolling Update Strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  config:
+    name: user.rpc
+    listenOn: "0.0.0.0:8080"
+    etcd:
+      hosts:
+        - "" # Will be replaced by template with full service name
+      key: user.rpc
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# User API service
+userApi:
+  enabled: true
+  replicaCount: 2
+  image:
+    repository: aether-defense/user-api
+    tag: latest # Should be specific version in production
+    pullPolicy: IfNotPresent
+  # Pod Disruption Budget
+  pdb:
+    minAvailable: "50%"
+  # Pod Anti-Affinity
+  podAntiAffinity: true
+  # Autoscaling
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPU: 70
+    targetMemory: 80
+  # Rolling Update Strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  service:
+    type: ClusterIP
+    port: 8888
+    targetPort: 8888
+  config:
+    name: user-api
+    host: "0.0.0.0"
+    port: 8888
+    userRpc:
+      etcd:
+        hosts:
+          - "" # Will be replaced by template with full service name
+        key: user.rpc
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Trade RPC service
+tradeRpc:
+  enabled: false
+  replicaCount: 2
+  image:
+    repository: aether-defense/trade-rpc
+    tag: latest # Should be specific version in production
+    pullPolicy: IfNotPresent
+  # Pod Disruption Budget
+  pdb:
+    minAvailable: "50%"
+  # Pod Anti-Affinity
+  podAntiAffinity: true
+  # Autoscaling
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+  # Rolling Update Strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  config:
+    name: trade.rpc
+    listenOn: "0.0.0.0:8080"
+    etcd:
+      hosts:
+        - "etcd-headless:2379"
+      key: trade.rpc
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Promotion RPC service
+promotionRpc:
+  enabled: false
+  replicaCount: 2
+  image:
+    repository: aether-defense/promotion-rpc
+    tag: latest # Should be specific version in production
+    pullPolicy: IfNotPresent
+  # Pod Disruption Budget
+  pdb:
+    minAvailable: "50%"
+  # Pod Anti-Affinity
+  podAntiAffinity: true
+  # Autoscaling
+  autoscaling:
+    enabled: false
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPU: 70
+    targetMemory: 80
+  # Rolling Update Strategy
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+
+# Network Policy
+networkPolicy:
+  enabled: false
+
+# ServiceAccount and RBAC
+serviceAccount:
+  create: true
+  annotations: {}
+  # name: ""  # If not set, will use fullname
+
+# Monitoring
+monitoring:
+  enabled: false
+  serviceMonitor:
+    enabled: false
+    interval: 30s
+    scrapeTimeout: 10s
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  config:
+    name: promotion.rpc
+    listenOn: "0.0.0.0:8080"
+    etcd:
+      hosts:
+        - "etcd-headless:2379"
+      key: promotion.rpc
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi

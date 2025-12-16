@@ -1,0 +1,13 @@
+apiVersion: v2
+name: aether-defense
+description: A Helm chart for Aether Defense System - a high-concurrency demo system built on go-zero
+type: application
+version: 0.1.0
+appVersion: "1.0.0"
+keywords:
+  - go-zero
+  - microservices
+  - etcd
+  - grpc
+maintainers:
+  - name: Aether Defense Team

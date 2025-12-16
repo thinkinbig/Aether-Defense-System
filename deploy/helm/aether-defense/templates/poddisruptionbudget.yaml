@@ -1,0 +1,21 @@
+{{- $services := list "etcd" "userRpc" "userApi" "tradeRpc" "promotionRpc" }}
+{{- range $serviceName := $services }}
+{{- $service := index $.Values $serviceName }}
+{{- if and $service (hasKey $service "enabled") $service.enabled (hasKey $service "pdb") (gt (int $service.replicaCount) 1) }}
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ $serviceName | lower }}-pdb
+  namespace: {{ $.Values.global.namespace | default (include "aether-defense.namespace" $) }}
+  labels:
+    {{- include "aether-defense.labels" $ | nindent 4 }}
+    app.kubernetes.io/component: {{ $serviceName }}
+spec:
+  minAvailable: {{ $service.pdb.minAvailable | default "50%" }}
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" $ | nindent 6 }}
+      app.kubernetes.io/component: {{ $serviceName }}
+{{- end }}
+{{- end }}
