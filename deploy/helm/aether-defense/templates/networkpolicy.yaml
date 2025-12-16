@@ -60,4 +60,3 @@ spec:
     - protocol: TCP
       port: 2379
 {{- end }}
-

@@ -83,4 +83,3 @@ Convert service name to lowercase for Kubernetes resource names
 {{- define "aether-defense.serviceNameLower" -}}
 {{- . | lower }}
 {{- end }}
-

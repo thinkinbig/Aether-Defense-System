@@ -131,4 +131,3 @@ See `.cursor/rules/` for detailed production deployment guidelines:
 - `16-production-deployment-testing.mdc` - Testing strategies
 - `17-production-deployment-canary.mdc` - Canary deployment
 - `18-production-deployment-checklist.mdc` - Deployment checklist
-

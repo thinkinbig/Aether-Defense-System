@@ -15,4 +15,3 @@ data:
         - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
       Key: {{ .Values.userRpc.config.etcd.key }}
 {{- end }}
-

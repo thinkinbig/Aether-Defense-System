@@ -5,7 +5,7 @@
 global:
   imageRegistry: ""
   imagePullPolicy: IfNotPresent
-  namespace: ""  # Will be set per environment
+  namespace: "" # Will be set per environment
 
 # Security configuration
 security:
@@ -79,7 +79,7 @@ userRpc:
   replicaCount: 2
   image:
     repository: aether-defense/user-rpc
-    tag: latest  # Should be specific version in production
+    tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
   pdb:
@@ -108,7 +108,7 @@ userRpc:
     listenOn: "0.0.0.0:8080"
     etcd:
       hosts:
-        - ""  # Will be replaced by template with full service name
+        - "" # Will be replaced by template with full service name
       key: user.rpc
   resources:
     requests:
@@ -124,7 +124,7 @@ userApi:
   replicaCount: 2
   image:
     repository: aether-defense/user-api
-    tag: latest  # Should be specific version in production
+    tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
   pdb:
@@ -155,7 +155,7 @@ userApi:
     userRpc:
       etcd:
         hosts:
-          - ""  # Will be replaced by template with full service name
+          - "" # Will be replaced by template with full service name
         key: user.rpc
   resources:
     requests:
@@ -171,7 +171,7 @@ tradeRpc:
   replicaCount: 2
   image:
     repository: aether-defense/trade-rpc
-    tag: latest  # Should be specific version in production
+    tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
   pdb:
@@ -216,7 +216,7 @@ promotionRpc:
   replicaCount: 2
   image:
     repository: aether-defense/promotion-rpc
-    tag: latest  # Should be specific version in production
+    tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
   pdb:
@@ -272,4 +272,3 @@ monitoring:
     limits:
       cpu: 500m
       memory: 512Mi
-

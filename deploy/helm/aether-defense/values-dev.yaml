@@ -37,4 +37,3 @@ limitRange:
 # Development: Disable network policies for easier debugging
 networkPolicy:
   enabled: false
-

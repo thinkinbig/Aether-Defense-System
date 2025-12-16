@@ -47,4 +47,3 @@ limitRange:
 # Staging: Enable network policies
 networkPolicy:
   enabled: true
-

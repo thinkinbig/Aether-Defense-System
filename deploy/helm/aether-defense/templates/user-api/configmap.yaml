@@ -11,11 +11,10 @@ data:
     Name: {{ .Values.userApi.config.name }}
     Host: {{ .Values.userApi.config.host }}
     Port: {{ .Values.userApi.config.port }}
-    
+
     UserRpc:
       Etcd:
         Hosts:
           - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
         Key: {{ .Values.userApi.config.userRpc.etcd.key }}
 {{- end }}
-

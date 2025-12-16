@@ -40,4 +40,3 @@ spec:
     {{- include "aether-defense.selectorLabels" . | nindent 4 }}
     app.kubernetes.io/component: etcd
 {{- end }}
-

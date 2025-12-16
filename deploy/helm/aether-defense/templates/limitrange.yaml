@@ -16,4 +16,3 @@ spec:
       memory: {{ .Values.limitRange.defaultRequest.memory | quote }}
     type: Container
 {{- end }}
-

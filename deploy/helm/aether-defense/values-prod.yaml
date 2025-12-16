@@ -1,7 +1,7 @@
 # Production environment overrides
 global:
   namespace: aether-defense-prod
-  imagePullPolicy: Always  # Always pull in production
+  imagePullPolicy: Always # Always pull in production
 
 # Production: Full HA configuration
 etcd:
@@ -17,7 +17,7 @@ etcd:
 userRpc:
   replicaCount: 3
   image:
-    tag: ""  # Must be set to specific version, never "latest"
+    tag: "" # Must be set to specific version, never "latest"
   autoscaling:
     enabled: true
     minReplicas: 3
@@ -31,7 +31,7 @@ userRpc:
 userApi:
   replicaCount: 3
   image:
-    tag: ""  # Must be set to specific version, never "latest"
+    tag: "" # Must be set to specific version, never "latest"
   autoscaling:
     enabled: true
     minReplicas: 3
@@ -45,7 +45,7 @@ userApi:
 tradeRpc:
   replicaCount: 3
   image:
-    tag: ""  # Must be set to specific version, never "latest"
+    tag: "" # Must be set to specific version, never "latest"
   autoscaling:
     enabled: true
     minReplicas: 3
@@ -54,7 +54,7 @@ tradeRpc:
 promotionRpc:
   replicaCount: 3
   image:
-    tag: ""  # Must be set to specific version, never "latest"
+    tag: "" # Must be set to specific version, never "latest"
   autoscaling:
     enabled: true
     minReplicas: 3
@@ -88,4 +88,3 @@ monitoring:
   enabled: true
   serviceMonitor:
     enabled: true
-

@@ -19,4 +19,3 @@ spec:
     pods: {{ .Values.resourceQuota.pods | quote }}
     {{- end }}
 {{- end }}
-

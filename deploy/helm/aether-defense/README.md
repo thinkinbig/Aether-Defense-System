@@ -84,4 +84,3 @@ curl http://localhost:8888/v1/users/1
 ```bash
 helm uninstall aether-defense
 ```
-
