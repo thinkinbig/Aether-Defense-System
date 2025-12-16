@@ -1,0 +1,20 @@
+{{- if .Values.userRpc.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-user-rpc
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-rpc
+spec:
+  type: {{ .Values.userRpc.service.type }}
+  ports:
+  - port: {{ .Values.userRpc.service.port }}
+    targetPort: grpc
+    protocol: TCP
+    name: grpc
+  selector:
+    {{- include "aether-defense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: user-rpc
+{{- end }}
+

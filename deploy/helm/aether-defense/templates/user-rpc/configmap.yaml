@@ -1,0 +1,18 @@
+{{- if .Values.userRpc.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-user-rpc-config
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-rpc
+data:
+  user.yaml: |
+    Name: {{ .Values.userRpc.config.name }}
+    ListenOn: {{ .Values.userRpc.config.listenOn }}
+    Etcd:
+      Hosts:
+        - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
+      Key: {{ .Values.userRpc.config.etcd.key }}
+{{- end }}
+

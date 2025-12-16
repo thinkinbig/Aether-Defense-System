@@ -1,0 +1,19 @@
+{{- if .Values.limitRange.enabled }}
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-limits
+  namespace: {{ include "aether-defense.namespace" . }}
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+spec:
+  limits:
+  - default:
+      cpu: {{ .Values.limitRange.default.cpu | quote }}
+      memory: {{ .Values.limitRange.default.memory | quote }}
+    defaultRequest:
+      cpu: {{ .Values.limitRange.defaultRequest.cpu | quote }}
+      memory: {{ .Values.limitRange.defaultRequest.memory | quote }}
+    type: Container
+{{- end }}
+

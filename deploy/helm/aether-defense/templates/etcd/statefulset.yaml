@@ -1,0 +1,122 @@
+{{- if .Values.etcd.enabled }}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-etcd
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: etcd
+spec:
+  serviceName: {{ include "aether-defense.fullname" . }}-etcd-headless
+  replicas: {{ .Values.etcd.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: etcd
+  template:
+    metadata:
+      labels:
+        {{- include "aether-defense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: etcd
+    spec:
+      securityContext:
+        runAsNonRoot: {{ .Values.security.runAsNonRoot }}
+        runAsUser: {{ .Values.security.runAsUser }}
+        fsGroup: {{ .Values.security.fsGroup }}
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.etcd.podAntiAffinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - etcd
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      containers:
+      - name: etcd
+        image: "{{ .Values.global.imageRegistry }}{{ .Values.etcd.image.repository }}:{{ .Values.etcd.image.tag }}"
+        imagePullPolicy: {{ .Values.etcd.image.pullPolicy }}
+        command:
+        - /usr/local/bin/etcd
+        - --name=$(POD_NAME)
+        - --data-dir=/var/lib/etcd
+        - --listen-client-urls=http://0.0.0.0:2379
+        - --advertise-client-urls=http://$(POD_NAME).{{ include "aether-defense.fullname" . }}-etcd-headless:2379
+        - --listen-peer-urls=http://0.0.0.0:2380
+        - --initial-advertise-peer-urls=http://$(POD_NAME).{{ include "aether-defense.fullname" . }}-etcd-headless:2380
+        - --initial-cluster={{ range $index, $e := until (int $.Values.etcd.replicaCount) }}{{ if $index }},{{ end }}{{ include "aether-defense.fullname" $ }}-etcd-{{ $index }}=http://{{ include "aether-defense.fullname" $ }}-etcd-{{ $index }}.{{ include "aether-defense.fullname" $ }}-etcd-headless:2380{{ end }}
+        - --initial-cluster-state={{ .Values.etcd.cluster.initialClusterState }}
+        - --initial-cluster-token={{ .Values.etcd.cluster.name }}-cluster
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        ports:
+        - name: client
+          containerPort: 2379
+          protocol: TCP
+        - name: peer
+          containerPort: 2380
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: {{ .Values.security.allowPrivilegeEscalation }}
+          readOnlyRootFilesystem: false  # etcd needs write access to data dir
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: {{ .Values.security.runAsNonRoot }}
+          runAsUser: {{ .Values.security.runAsUser }}
+        volumeMounts:
+        - name: data
+          mountPath: /var/lib/etcd
+        resources:
+          {{- toYaml .Values.etcd.resources | nindent 10 }}
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 2379
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 2379
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          httpGet:
+            path: /health
+            port: 2379
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30
+  volumeClaimTemplates:
+  {{- if .Values.etcd.persistence.enabled }}
+  - metadata:
+      name: data
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      {{- if .Values.etcd.persistence.storageClass }}
+      storageClassName: {{ .Values.etcd.persistence.storageClass }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ .Values.etcd.persistence.size }}
+  {{- end }}
+{{- end }}
+

@@ -1,0 +1,63 @@
+{{- if .Values.networkPolicy.enabled }}
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-network-policy
+  namespace: {{ include "aether-defense.namespace" . }}
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow API services from Ingress controllers
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8888
+  # Allow RPC services from API services
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: user-api
+    ports:
+    - protocol: TCP
+      port: 8080
+  # Allow etcd access from RPC services
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: user-rpc
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: trade-rpc
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: promotion-rpc
+    ports:
+    - protocol: TCP
+      port: 2379
+  egress:
+  # Allow DNS
+  - to:
+    - namespaceSelector: {}
+    ports:
+    - protocol: UDP
+      port: 53
+  # Allow etcd communication
+  - to:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: etcd
+    ports:
+    - protocol: TCP
+      port: 2379
+{{- end }}
+

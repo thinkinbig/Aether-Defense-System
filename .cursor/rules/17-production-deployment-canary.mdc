@@ -1,0 +1,175 @@
+# Production Deployment - Canary Deployment & Rollout
+
+## Overview
+
+This document defines mandatory rules for **canary deployment and rollout strategies** in production. This includes HPA (Horizontal Pod Autoscaler), canary deployment, blue-green deployment, and rollout configuration.
+
+**MANDATORY**: All production releases MUST use canary deployment strategy.
+
+## 1. Horizontal Pod Autoscaler (HPA)
+
+**MANDATORY**: Configure HPA for auto-scaling.
+
+**HPA Configuration**:
+```yaml
+# templates/hpa.yaml
+{{- range .Values.services }}
+{{- if and .enabled .autoscaling.enabled }}
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-hpa
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: {{ include "aether-defense.fullname" $ }}-{{ .name }}
+  minReplicas: {{ .autoscaling.minReplicas | default 3 }}
+  maxReplicas: {{ .autoscaling.maxReplicas | default 10 }}
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: {{ .autoscaling.targetCPU | default 70 }}
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: {{ .autoscaling.targetMemory | default 80 }}
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 50
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 0
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 15
+      - type: Pods
+        value: 2
+        periodSeconds: 15
+      selectPolicy: Max
+{{- end }}
+{{- end }}
+```
+
+**Values Configuration**:
+```yaml
+userApi:
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 20
+    targetCPU: 70
+    targetMemory: 80
+```
+
+## 2. Canary Deployment Strategy
+
+**MANDATORY**: Use canary deployment for production releases.
+
+**Canary Deployment Steps**:
+
+1. **Deploy Canary Version**:
+```bash
+# Deploy canary with 10% traffic
+helm install aether-defense-canary ./deploy/helm/aether-defense \
+  -f values-prod.yaml \
+  --set userApi.replicaCount=1 \
+  --set userApi.image.tag=v1.3.0-canary \
+  -n aether-defense-prod
+```
+
+2. **Traffic Splitting** (using Istio or similar):
+```yaml
+# VirtualService for canary
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: user-api
+spec:
+  hosts:
+  - user-api
+  http:
+  - match:
+    - headers:
+        canary:
+          exact: "true"
+    route:
+    - destination:
+        host: user-api-canary
+      weight: 100
+  - route:
+    - destination:
+        host: user-api
+      weight: 90
+    - destination:
+        host: user-api-canary
+      weight: 10
+```
+
+3. **Monitor Canary**:
+   - Monitor error rates
+   - Monitor latency (P50, P95, P99)
+   - Monitor resource usage
+   - Monitor business metrics
+
+4. **Promote or Rollback**:
+   - If metrics are good: Gradually increase canary traffic to 100%
+   - If metrics are bad: Rollback immediately
+
+## 3. Blue-Green Deployment
+
+**Alternative Strategy**: Blue-Green deployment for zero-downtime.
+
+**Implementation**:
+```bash
+# Deploy green version
+helm install aether-defense-green ./deploy/helm/aether-defense \
+  -f values-prod.yaml \
+  --set userApi.image.tag=v1.3.0 \
+  -n aether-defense-prod
+
+# Switch traffic (update Service selector)
+kubectl patch service user-api -n aether-defense-prod \
+  -p '{"spec":{"selector":{"version":"green"}}}'
+
+# Verify green version
+# If good: Delete blue version
+# If bad: Switch back to blue
+```
+
+## 4. Rollout Strategy Configuration
+
+**MANDATORY**: Configure rollout strategy in values.
+
+```yaml
+# values-prod.yaml
+global:
+  rolloutStrategy: canary  # or "blue-green" or "rolling"
+
+userApi:
+  rollout:
+    strategy: canary
+    canary:
+      initialTraffic: 10
+      increment: 10
+      interval: 5m
+      successThreshold: 95  # 95% success rate required
+      failureThreshold: 5   # 5% failure rate triggers rollback
+```
+
+## Important Rules Summary
+
+1. **ALWAYS** configure HPA for auto-scaling
+2. **ALWAYS** use canary deployment for production releases
+3. **ALWAYS** monitor canary metrics before promoting
+4. **ALWAYS** have rollback plan ready
+5. **NEVER** skip canary deployment in production

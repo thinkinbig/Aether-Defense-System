@@ -1,0 +1,119 @@
+{{- if .Values.userRpc.enabled }}
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-user-rpc
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-rpc
+spec:
+  replicas: {{ .Values.userRpc.replicaCount }}
+  {{- if .Values.userRpc.strategy }}
+  strategy:
+    type: {{ .Values.userRpc.strategy.type }}
+    {{- if .Values.userRpc.strategy.rollingUpdate }}
+    rollingUpdate:
+      maxSurge: {{ .Values.userRpc.strategy.rollingUpdate.maxSurge }}
+      maxUnavailable: {{ .Values.userRpc.strategy.rollingUpdate.maxUnavailable }}
+    {{- end }}
+  {{- end }}
+  selector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: user-rpc
+  template:
+    metadata:
+      labels:
+        {{- include "aether-defense.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: user-rpc
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "aether-defense.fullname" . }}-userrpc-sa
+      {{- end }}
+      securityContext:
+        runAsNonRoot: {{ .Values.security.runAsNonRoot }}
+        runAsUser: {{ .Values.security.runAsUser }}
+        fsGroup: {{ .Values.security.fsGroup }}
+        seccompProfile:
+          type: RuntimeDefault
+      {{- if .Values.userRpc.podAntiAffinity }}
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 100
+            podAffinityTerm:
+              labelSelector:
+                matchExpressions:
+                - key: app.kubernetes.io/component
+                  operator: In
+                  values:
+                  - user-rpc
+              topologyKey: kubernetes.io/hostname
+      {{- end }}
+      containers:
+      - name: user-rpc
+        image: "{{ .Values.global.imageRegistry }}{{ .Values.userRpc.image.repository }}:{{ .Values.userRpc.image.tag }}"
+        imagePullPolicy: {{ .Values.userRpc.image.pullPolicy }}
+        command:
+        - /app/user-rpc
+        - -f
+        - /etc/user-rpc/user.yaml
+        ports:
+        - name: grpc
+          containerPort: {{ .Values.userRpc.service.targetPort }}
+          protocol: TCP
+        securityContext:
+          allowPrivilegeEscalation: {{ .Values.security.allowPrivilegeEscalation }}
+          readOnlyRootFilesystem: {{ .Values.security.readOnlyRootFilesystem }}
+          capabilities:
+            drop:
+            - ALL
+          runAsNonRoot: {{ .Values.security.runAsNonRoot }}
+          runAsUser: {{ .Values.security.runAsUser }}
+        volumeMounts:
+        - name: config
+          mountPath: /etc/user-rpc
+          readOnly: true
+        {{- if .Values.security.readOnlyRootFilesystem }}
+        - name: tmp
+          mountPath: /tmp
+        - name: var-run
+          mountPath: /var/run
+        {{- end }}
+        resources:
+          {{- toYaml .Values.userRpc.resources | nindent 10 }}
+        livenessProbe:
+          tcpSocket:
+            port: grpc
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+          successThreshold: 1
+        readinessProbe:
+          tcpSocket:
+            port: grpc
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 3
+          successThreshold: 1
+        startupProbe:
+          tcpSocket:
+            port: grpc
+          initialDelaySeconds: 0
+          periodSeconds: 10
+          timeoutSeconds: 3
+          failureThreshold: 30
+      volumes:
+      - name: config
+        configMap:
+          name: {{ include "aether-defense.fullname" . }}-user-rpc-config
+      {{- if .Values.security.readOnlyRootFilesystem }}
+      - name: tmp
+        emptyDir: {}
+      - name: var-run
+        emptyDir: {}
+      {{- end }}
+{{- end }}
+

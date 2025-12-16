@@ -1,0 +1,153 @@
+# Production Deployment - Environment Isolation
+
+## Overview
+
+This document defines mandatory rules for **environment isolation** in production deployments using Helm and Kubernetes. This includes namespace management, network policies, RBAC, and configuration separation.
+
+**MANDATORY**: All production deployments MUST follow these isolation rules.
+
+## 1. Namespace Management
+
+**MANDATORY**: Use separate namespaces for each environment.
+
+```yaml
+# values-dev.yaml
+namespace: aether-defense-dev
+
+# values-staging.yaml
+namespace: aether-defense-staging
+
+# values-prod.yaml
+namespace: aether-defense-prod
+```
+
+**Rules**:
+- ✅ **ALWAYS** deploy to environment-specific namespaces
+- ✅ **NEVER** share namespaces between environments
+- ✅ Use namespace-scoped ResourceQuotas and LimitRanges
+- ✅ Label all resources with `environment: dev|staging|prod`
+
+## 2. Network Policies
+
+**MANDATORY**: Implement NetworkPolicy for pod-to-pod communication control.
+
+**Required NetworkPolicy Rules**:
+- API services can only receive traffic from Ingress controllers
+- RPC services can only receive traffic from API services and other RPC services
+- etcd can only receive traffic from RPC services
+- No direct internet access for backend services (except API)
+
+**Implementation**:
+```yaml
+# templates/networkpolicy.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-network-policy
+spec:
+  podSelector:
+    matchLabels:
+      {{- include "aether-defense.selectorLabels" . | nindent 6 }}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  # Allow API services from Ingress
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: ingress-nginx
+    ports:
+    - protocol: TCP
+      port: 8888
+  # Allow RPC services from API services
+  - from:
+    - podSelector:
+        matchLabels:
+          app.kubernetes.io/component: user-api
+    ports:
+    - protocol: TCP
+      port: 8080
+```
+
+## 3. RBAC (Role-Based Access Control)
+
+**MANDATORY**: Create dedicated ServiceAccounts for each service.
+
+**Rules**:
+- ✅ **ALWAYS** use dedicated ServiceAccount (never use `default`)
+- ✅ **ALWAYS** follow principle of least privilege
+- ✅ **NEVER** grant cluster-admin permissions to application pods
+- ✅ Use Role (namespace-scoped) instead of ClusterRole when possible
+
+**Implementation**:
+```yaml
+# templates/serviceaccount.yaml
+{{- range .Values.services }}
+{{- if .enabled }}
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-sa
+  namespace: {{ $.Values.namespace }}
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-role
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-binding
+subjects:
+- kind: ServiceAccount
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-sa
+roleRef:
+  kind: Role
+  name: {{ include "aether-defense.fullname" $ }}-{{ .name }}-role
+  apiGroup: rbac.authorization.k8s.io
+{{- end }}
+{{- end }}
+```
+
+## 4. Configuration Separation
+
+**MANDATORY**: Use separate values files for each environment.
+
+**File Structure**:
+```
+deploy/helm/aether-defense/
+├── values.yaml          # Base/default values
+├── values-dev.yaml      # Development overrides
+├── values-staging.yaml  # Staging overrides
+├── values-prod.yaml     # Production overrides
+```
+
+**Deployment Commands**:
+```bash
+# Development
+helm install aether-defense ./deploy/helm/aether-defense \
+  -f deploy/helm/aether-defense/values.yaml \
+  -f deploy/helm/aether-defense/values-dev.yaml \
+  -n aether-defense-dev --create-namespace
+
+# Production
+helm install aether-defense ./deploy/helm/aether-defense \
+  -f deploy/helm/aether-defense/values.yaml \
+  -f deploy/helm/aether-defense/values-prod.yaml \
+  -n aether-defense-prod --create-namespace
+```
+
+## Important Rules Summary
+
+1. **ALWAYS** use environment-specific namespaces
+2. **ALWAYS** configure NetworkPolicy for pod-to-pod communication
+3. **ALWAYS** use dedicated ServiceAccount with least privilege
+4. **ALWAYS** separate configuration files per environment
+5. **NEVER** share namespaces between environments
+6. **NEVER** use default ServiceAccount

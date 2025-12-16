@@ -1,0 +1,110 @@
+# Production Deployment - Testing Strategy
+
+## Overview
+
+This document defines mandatory rules for **testing Helm charts and deployments** before production. This includes Helm chart testing, integration testing, and end-to-end testing.
+
+**MANDATORY**: All Helm charts MUST be tested before production deployment.
+
+## 1. Helm Chart Testing
+
+**MANDATORY**: Test Helm charts before deployment.
+
+**Helm Test Structure**:
+```
+deploy/helm/aether-defense/
+├── templates/
+│   └── tests/
+│       ├── test-connection.yaml
+│       └── test-health.yaml
+```
+
+**Test Implementation**:
+```yaml
+# templates/tests/test-connection.yaml
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "aether-defense.fullname" . }}-test-connection"
+  annotations:
+    "helm.sh/hook": test
+spec:
+  containers:
+  - name: wget
+    image: busybox
+    command: ['wget']
+    args: ['{{ include "aether-defense.fullname" . }}-user-api:8888/health']
+  restartPolicy: Never
+```
+
+**Run Tests**:
+```bash
+# Install chart
+helm install aether-defense ./deploy/helm/aether-defense
+
+# Run tests
+helm test aether-defense
+
+# Cleanup
+helm uninstall aether-defense
+```
+
+## 2. Integration Testing
+
+**MANDATORY**: Perform integration tests in staging before production.
+
+**Integration Test Checklist**:
+- [ ] All services can communicate via etcd
+- [ ] API services can reach RPC services
+- [ ] Health checks respond correctly
+- [ ] Resource limits are enforced
+- [ ] Network policies allow/deny traffic correctly
+- [ ] Secrets are mounted correctly
+
+## 3. End-to-End Testing
+
+**MANDATORY**: Run E2E tests before production deployment.
+
+**E2E Test Scenarios**:
+1. **Service Discovery**: Verify services register with etcd
+2. **API Flow**: Test complete API request flow (API → RPC → Database)
+3. **High Availability**: Kill pods and verify automatic recovery
+4. **Rolling Update**: Test zero-downtime deployment
+5. **Resource Limits**: Verify pods are killed when exceeding limits
+
+## Testing Workflow
+
+**Before Production Deployment**:
+```bash
+# 1. Lint chart
+helm lint ./deploy/helm/aether-defense
+
+# 2. Dry-run
+helm install aether-defense ./deploy/helm/aether-defense \
+  -f values-prod.yaml \
+  --dry-run --debug
+
+# 3. Deploy to staging
+helm install aether-defense ./deploy/helm/aether-defense \
+  -f values-staging.yaml \
+  -n aether-defense-staging --create-namespace
+
+# 4. Run Helm tests
+helm test aether-defense -n aether-defense-staging
+
+# 5. Run integration tests
+# (Use your integration test framework)
+
+# 6. Run E2E tests
+# (Use your E2E test framework)
+
+# 7. If all tests pass, proceed to production
+```
+
+## Important Rules Summary
+
+1. **ALWAYS** write Helm test hooks for chart validation
+2. **ALWAYS** run integration tests in staging before production
+3. **ALWAYS** run E2E tests before production deployment
+4. **ALWAYS** test all critical paths (service discovery, API flow, HA, rolling updates)
+5. **NEVER** skip testing before production deployment

@@ -1,0 +1,42 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+*.md
+doc/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Dependencies
+vendor/
+node_modules/
+
+# Test files
+*_test.go
+**/*_test.go
+
+# Deployment
+deploy/
+*.yaml
+*.yml
+!**/etc/*.yaml
+
+# Other
+.DS_Store
+*.log
+

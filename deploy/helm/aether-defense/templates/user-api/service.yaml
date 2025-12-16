@@ -1,0 +1,20 @@
+{{- if .Values.userApi.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-user-api
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: user-api
+spec:
+  type: {{ .Values.userApi.service.type }}
+  ports:
+  - port: {{ .Values.userApi.service.port }}
+    targetPort: http
+    protocol: TCP
+    name: http
+  selector:
+    {{- include "aether-defense.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: user-api
+{{- end }}
+

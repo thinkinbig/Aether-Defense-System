@@ -1,0 +1,50 @@
+# Staging environment overrides
+global:
+  namespace: aether-defense-staging
+
+# Staging: Production-like but with lower resources
+etcd:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+userRpc:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 5
+
+userApi:
+  replicaCount: 2
+  autoscaling:
+    enabled: true
+    minReplicas: 2
+    maxReplicas: 10
+
+# Staging: Enable security
+security:
+  readOnlyRootFilesystem: true
+
+# Staging: Enable resource quotas
+resourceQuota:
+  enabled: true
+  requests:
+    cpu: "10"
+    memory: 20Gi
+  limits:
+    cpu: "20"
+    memory: 40Gi
+
+limitRange:
+  enabled: true
+
+# Staging: Enable network policies
+networkPolicy:
+  enabled: true
+
