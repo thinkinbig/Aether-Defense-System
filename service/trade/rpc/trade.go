@@ -9,7 +9,9 @@ import (
 )
 
 // TradeService trading service struct.
-type TradeService struct{}
+type TradeService struct {
+	UnimplementedTradeServiceServer
+}
 
 // PlaceOrder place order.
 func (s *TradeService) PlaceOrder(ctx context.Context, req *PlaceOrderRequest) (*PlaceOrderResponse, error) {

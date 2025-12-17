@@ -8,7 +8,9 @@ import (
 )
 
 // PromotionService marketing service struct.
-type PromotionService struct{}
+type PromotionService struct {
+	UnimplementedPromotionServiceServer
+}
 
 // DecrStock decrement inventory.
 func (s *PromotionService) DecrStock(ctx context.Context, req *DecrStockRequest) (*DecrStockResponse, error) {

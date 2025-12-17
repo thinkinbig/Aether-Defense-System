@@ -1,5 +1,50 @@
 # Git Workflow (MANDATORY)
 
+## ⚠️ CRITICAL: Protected Branches Rule
+
+**`main` and `develop` branches are PROTECTED - NO DIRECT COMMITS ALLOWED**
+
+- ❌ **NEVER** commit directly to `main` or `develop`
+- ✅ **ALWAYS** create a feature branch first
+- ✅ **ALWAYS** use Pull Request workflow
+- ✅ **AI MUST** check branch before making changes
+
+**If AI detects you're on `main` or `develop`, it MUST create a new branch before any changes.**
+
+## Protected Branches (CRITICAL)
+
+**main** and **develop** branches are PROTECTED and MUST NOT be committed to directly.
+
+### Protected Branch Rules
+
+1. **NEVER commit directly to `main` or `develop`**
+   - These branches are protected in the repository
+   - Direct commits will be rejected by branch protection rules
+   - All changes MUST go through Pull Request workflow
+
+2. **ALWAYS create a feature branch from protected branches**
+   ```bash
+   # From main
+   git checkout main
+   git pull origin main
+   git checkout -b feat/your-feature
+
+   # OR from develop
+   git checkout develop
+   git pull origin develop
+   git checkout -b feat/your-feature
+   ```
+
+3. **AI MUST check current branch before making changes**
+   - If on `main` or `develop`: Create new branch immediately
+   - If on feature branch: Proceed with changes
+   - Never attempt to commit to protected branches
+
+4. **Branch Protection Enforcement**
+   - Repository has branch protection rules enabled
+   - Direct pushes to `main`/`develop` will fail
+   - All merges must go through Pull Request with approval
+
 ## Git Workflow Process - Follow for EVERY Code Change
 
 When making ANY code modification, you MUST follow this Git workflow:
@@ -24,7 +69,16 @@ When making ANY code modification, you MUST follow this Git workflow:
 
 ## Step 1: Create New Branch
 
-**ALWAYS create a new branch for each change. NEVER commit directly to main/master.**
+**ALWAYS create a new branch for each change. NEVER commit directly to `main` or `develop` (PROTECTED BRANCHES).**
+
+### Source Branch Selection
+
+Choose the appropriate source branch based on your workflow:
+
+- **From `main`**: For production-ready features, hotfixes
+- **From `develop`**: For development features, experimental changes
+
+**Both `main` and `develop` are protected - you MUST create a feature branch.**
 
 ### Branch Naming Convention
 
@@ -59,6 +113,7 @@ hotfix/order-payment-bug        # Hotfix: order payment bug
 
 ### Branch Creation Commands
 
+**From `main` branch:**
 ```bash
 # 1. Switch to main branch and update
 git checkout main
@@ -70,6 +125,21 @@ git checkout -b feat/order-coupon-support
 # 3. Verify branch
 git branch  # Should show * feat/order-coupon-support
 ```
+
+**From `develop` branch:**
+```bash
+# 1. Switch to develop branch and update
+git checkout develop
+git pull origin develop
+
+# 2. Create and switch to new branch
+git checkout -b feat/order-coupon-support
+
+# 3. Verify branch
+git branch  # Should show * feat/order-coupon-support
+```
+
+**⚠️ IMPORTANT:** Never attempt to commit while on `main` or `develop` - these are protected branches!
 
 ## Step 2: Make Changes
 
@@ -219,48 +289,92 @@ For EVERY code change, verify:
 
 ## Important Git Rules
 
-1. **NEVER commit directly to main/master** - Always use branches
+1. **NEVER commit directly to `main` or `develop`** - These are PROTECTED branches
+   - Branch protection rules prevent direct commits
+   - All changes MUST go through feature branches and Pull Requests
+   - AI MUST check branch before making any changes
+
 2. **NEVER force push to shared branches** - Use `--force-with-lease` if needed
+   - Especially forbidden on `main` and `develop`
+   - Only allowed on feature branches with caution
+
 3. **NEVER commit sensitive information** - Use `.gitignore`
+   - API keys, passwords, tokens, etc.
+
 4. **ALWAYS create new branch** - For each change
+   - From `main` or `develop` (depending on workflow)
+   - Use proper branch naming convention
+
 5. **ALWAYS follow commit message format** - Conventional Commits
-6. **ALWAYS create PR** - Before merging to main
+   - Format: `<type>(<scope>): <subject>`
+
+6. **ALWAYS create PR** - Before merging to protected branches
+   - PR is required for `main` and `develop`
+   - Code review and approval required
 
 ## When AI Generates Code
 
-When using AI to generate code, AI should:
+When using AI to generate code, AI MUST follow these steps:
 
-1. **First**: Check current branch
+1. **First**: Check current branch (MANDATORY)
    ```bash
    git branch
+   # or
+   git status
    ```
 
-2. **If on main**: Create new branch
+2. **If on `main` or `develop` (PROTECTED BRANCHES)**:
+   - **STOP immediately** - Do not make any changes
+   - **MUST create new branch first**
    ```bash
+   # If on main
+   git checkout main
+   git pull origin main
+   git checkout -b feat/feature-name
+
+   # OR if on develop
+   git checkout develop
+   git pull origin develop
    git checkout -b feat/feature-name
    ```
+   - **Then proceed with changes**
 
-3. **After changes**: Commit with proper format
+3. **If on feature branch**: Proceed with changes normally
+
+4. **After changes**: Commit with proper format
    ```bash
    git add .
    git commit -m "feat(scope): description"
    ```
 
-4. **Finally**: Remind user to push and create PR
+5. **Finally**: Remind user to push and create PR
    ```bash
    git push -u origin feat/feature-name
    ```
+   - Remind user that PR is required for merging to protected branches
 
 ## Example Git Workflow with AI
 
 ```
 User: "Add a method to cancel an order"
 
-AI should:
+AI MUST:
 1. Check current branch: git branch
-2. If on main, create branch: git checkout -b feat/order-cancel
-3. Generate code following TDD workflow
-4. After code is ready:
+   - If output shows "* main" or "* develop": STOP
+   - These are PROTECTED branches - cannot commit directly
+
+2. If on main or develop (PROTECTED):
+   - Create branch immediately:
+     git checkout main  # or develop
+     git pull origin main  # or develop
+     git checkout -b feat/order-cancel
+   - Then proceed with step 3
+
+3. If on feature branch: Proceed directly
+
+4. Generate code following TDD workflow
+
+5. After code is ready:
    git add .
    git commit -m "feat(trade): add cancel order method
 
@@ -270,6 +384,23 @@ AI should:
    - Update API documentation
 
    Closes #123"
-5. Remind user: "Please push the branch and create a PR:
-   git push -u origin feat/order-cancel"
+
+6. Remind user: "Please push the branch and create a PR:
+   git push -u origin feat/order-cancel
+
+   Note: PR is required for merging to main/develop (protected branches)"
 ```
+
+## Branch Protection Enforcement
+
+**Repository Configuration:**
+- `main` branch: Protected, requires PR and approval
+- `develop` branch: Protected, requires PR and approval
+- Direct commits to protected branches: **BLOCKED**
+- Force push to protected branches: **BLOCKED**
+
+**AI Behavior:**
+- AI MUST check branch before ANY code changes
+- AI MUST refuse to commit if on `main` or `develop`
+- AI MUST create feature branch first if on protected branch
+- AI MUST remind user about PR requirement
