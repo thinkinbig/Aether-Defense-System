@@ -1,0 +1,42 @@
+# Reference Projects
+
+## Business Logic and System Design Reference
+
+When you are unsure about how to implement business logic or system design patterns, you can reference the following production-grade project:
+
+### Heavenly Secrets Academy (天机学堂)
+
+**Repository**: https://github.com/Kiraaaaaaa/Heavenly-Secrets-Academy
+
+**Description**: A production-level online education platform based on microservices architecture, targeting adult vocational skills training (non-academic education).
+
+**Why Reference This Project**:
+- High business completeness and authenticity, very close to real enterprise projects
+- Comprehensive implementation of core business scenarios:
+  - Learning assistance system
+  - Examination system
+  - E-commerce promotion and coupon system
+  - Order and payment system
+  - User management system
+
+**Key Technical Solutions to Reference**:
+- Distributed lock implementation (custom annotations + Redisson)
+- High-concurrency inventory deduction (Lua scripts)
+- Coupon system with high-performance validation
+- Order and payment processing
+- Learning progress tracking
+- Comment and like systems
+- Sign-in and points ranking systems
+
+**When to Reference**:
+- When designing business logic for similar features (orders, promotions, users)
+- When implementing high-concurrency solutions
+- When designing data models and database schemas
+- When implementing distributed transaction patterns
+- When designing caching strategies
+- When implementing message queue patterns
+
+**Note**:
+- This is a Java/Spring Cloud project, but the business logic patterns and system design principles are applicable
+- Adapt the patterns to Go/go-zero framework conventions
+- Focus on understanding the business logic and architecture patterns, not copying code directly
