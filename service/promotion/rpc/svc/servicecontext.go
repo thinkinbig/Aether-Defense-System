@@ -34,10 +34,16 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 		couponRepo = repo.NewCouponRepo(client.DB())
 	}
 
-	// Initialize Redis client
-	redisClient, err := redis.NewClient(&c.InventoryRedis)
-	if err != nil {
-		panic(fmt.Sprintf("failed to initialize Redis: %v", err))
+	// Initialize Inventory Redis client only when configured.
+	//
+	// In unit tests (and some lightweight deployments) we don't always have Redis available.
+	// If inventoryRedis is not set in config, keep Redis nil and let business logic decide.
+	if c.InventoryRedis.Addr != "" || c.InventoryRedis.Host != "" {
+		var err error
+		redisClient, err = redis.NewClient(&c.InventoryRedis)
+		if err != nil {
+			panic(fmt.Sprintf("failed to initialize Redis: %v", err))
+		}
 	}
 
 	return &ServiceContext{
