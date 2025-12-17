@@ -1,0 +1,43 @@
+# Docker Compose for optimized builds with BuildKit cache
+version: "3.8"
+
+services:
+  user-api:
+    build:
+      context: .
+      dockerfile: cmd/api/user-api/Dockerfile
+      cache_from:
+        - golang:1.22-alpine
+      target: builder
+    environment:
+      - DOCKER_BUILDKIT=1
+
+  user-rpc:
+    build:
+      context: .
+      dockerfile: cmd/rpc/user-rpc/Dockerfile
+      cache_from:
+        - golang:1.22-alpine
+      target: builder
+    environment:
+      - DOCKER_BUILDKIT=1
+
+  trade-rpc:
+    build:
+      context: .
+      dockerfile: service/trade/rpc/Dockerfile
+      cache_from:
+        - golang:1.22-alpine
+      target: builder
+    environment:
+      - DOCKER_BUILDKIT=1
+
+  promotion-rpc:
+    build:
+      context: .
+      dockerfile: service/promotion/rpc/Dockerfile
+      cache_from:
+        - golang:1.22-alpine
+      target: builder
+    environment:
+      - DOCKER_BUILDKIT=1
