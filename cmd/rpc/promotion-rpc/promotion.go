@@ -1,4 +1,9 @@
 // Package main starts the promotion RPC service.
+//
+// Best Practice Solution:
+// We moved internal/server, internal/config, internal/svc, and internal/repo
+// out of the internal directory to allow cmd/rpc/promotion-rpc to import them.
+// This follows go-zero best practices while maintaining the cmd/rpc directory structure.
 package main
 
 import (
@@ -10,26 +15,28 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/aether-defense-system/service/promotion/rpc"
+	promotionConfig "github.com/aether-defense-system/service/promotion/rpc/config-internal"
+	promotionServer "github.com/aether-defense-system/service/promotion/rpc/server"
+	promotionSvc "github.com/aether-defense-system/service/promotion/rpc/svc"
 )
 
 var configFile = flag.String("f", "service/promotion/rpc/etc/promotion.yaml", "the config file")
 
-// Config mirrors the RPC server configuration for promotion service.
-type Config struct {
-	zrpc.RpcServerConf
-}
-
 func main() {
 	flag.Parse()
 
-	var c Config
+	// Load config
+	var c promotionConfig.Config
 	conf.MustLoad(*configFile, &c)
 
+	// Create ServiceContext
+	ctx := promotionSvc.NewServiceContext(&c)
+
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		rpc.RegisterPromotionServiceServer(grpcServer, &rpc.PromotionService{})
+		rpc.RegisterPromotionServiceServer(grpcServer, promotionServer.NewPromotionServiceServer(ctx))
 	})
 	defer s.Stop()
 
-	_, _ = fmt.Printf("Starting promotion rpc server at %s...\n", c.ListenOn)
+	_, _ = fmt.Printf("Starting promotion rpc server at %s...\n", c.RpcServerConf.ListenOn)
 	s.Start()
 }

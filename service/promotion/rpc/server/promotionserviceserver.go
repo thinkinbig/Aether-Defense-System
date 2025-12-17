@@ -9,7 +9,7 @@ import (
 
 	"github.com/aether-defense-system/service/promotion/rpc"
 	"github.com/aether-defense-system/service/promotion/rpc/internal/logic"
-	"github.com/aether-defense-system/service/promotion/rpc/internal/svc"
+	"github.com/aether-defense-system/service/promotion/rpc/svc"
 )
 
 type PromotionServiceServer struct {

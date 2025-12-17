@@ -266,7 +266,7 @@ jobs:
           timeout 60 bash -c 'until redis-cli -h 127.0.0.1 ping; do sleep 1; done'
 
       - name: Run integration tests
-        run: go test -v ./test/integration/...
+        run: go test -tags=integration -v ./test/integration/...
         env:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 3306

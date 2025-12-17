@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/redis/go-redis/v9"
+	redisv9 "github.com/redis/go-redis/v9"
 )
 
 // TestRedisClient tests require a running Redis instance.
@@ -105,8 +105,8 @@ func TestClient_BasicOperations(t *testing.T) {
 
 	// Verify deletion
 	_, getErr := client.Get(ctx, "test:key")
-	if !errors.Is(getErr, redis.Nil) {
-		t.Errorf("Expected redis.Nil after deletion, got %v", getErr)
+	if !errors.Is(getErr, redisv9.Nil) {
+		t.Errorf("Expected redisv9.Nil after deletion, got %v", getErr)
 	}
 }
 

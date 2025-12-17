@@ -8,20 +8,18 @@ import (
 )
 
 // PromotionService marketing service struct.
+// This is a placeholder implementation. The actual implementation with ServiceContext
+// is in internal/server/promotionserviceserver.go, which is used when properly initialized.
 type PromotionService struct {
 	UnimplementedPromotionServiceServer
 }
 
 // DecrStock decrement inventory.
-func (s *PromotionService) DecrStock(ctx context.Context, req *DecrStockRequest) (*DecrStockResponse, error) {
-	// TODO: Implement inventory deduction logic
-	// 1. Call Redis Lua script to perform atomic inventory deduction
-	// 2. Return execution result
-
-	logx.WithContext(ctx).Infof("Deducting inventory for course ID=%d, quantity=%d", req.CourseId, req.Num)
-
+// This is a placeholder. Use internal/server.PromotionServiceServer for actual implementation.
+func (s *PromotionService) DecrStock(ctx context.Context, _ *DecrStockRequest) (*DecrStockResponse, error) {
+	logx.WithContext(ctx).Errorf("PromotionService.DecrStock: service not properly initialized")
 	return &DecrStockResponse{
-		Success: true,
-		Message: "Inventory deduction successful",
+		Success: false,
+		Message: "Service not properly initialized. Use server.PromotionServiceServer instead.",
 	}, nil
 }

@@ -14,5 +14,9 @@ import (
 type Config struct {
 	zrpc.RpcServerConf
 	Database database.Config `json:"database" yaml:"database"`
-	Redis    redis.Config    `json:"redis" yaml:"redis"`
+	// InventoryRedis is the Redis used by business logic (stock deduction, etc.).
+	//
+	// Note: zrpc.RpcServerConf already has a field named Redis (redis.RedisKeyConf) used for RPC auth.
+	// Keeping our business Redis under a different key avoids config load conflicts.
+	InventoryRedis redis.Config `json:"inventoryRedis" yaml:"inventoryRedis"`
 }
