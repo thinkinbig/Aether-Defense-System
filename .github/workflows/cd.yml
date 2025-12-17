@@ -5,8 +5,9 @@ on:
     workflows: ["CI"]
     types:
       - completed
+    branches: [main, develop]
   push:
-    tags: ["v*"] # Only for release tags
+    tags: ["v*"]
 
 env:
   REGISTRY: ghcr.io
@@ -18,15 +19,9 @@ permissions:
   actions: read
 
 jobs:
-  # Only run CD after CI succeeds
   check-ci-success:
     runs-on: ubuntu-latest
-    if: |
-      (github.event_name == 'workflow_run' &&
-       github.event.workflow_run.conclusion == 'success' &&
-       (github.event.workflow_run.head_branch == 'main' ||
-        github.event.workflow_run.head_branch == 'develop')) ||
-      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v'))
+    if: github.event.workflow_run.conclusion == 'success' || github.event_name == 'push'
     outputs:
       should-deploy: ${{ steps.check.outputs.should-deploy }}
     steps:
@@ -52,7 +47,6 @@ jobs:
             echo "should-deploy=false" >> $GITHUB_OUTPUT
           fi
 
-    # Build and push Docker images
   build-and-push:
     needs: check-ci-success
     runs-on: ubuntu-latest
@@ -125,7 +119,6 @@ jobs:
           name: sbom-${{ matrix.service.name }}
           path: sbom-${{ matrix.service.name }}.spdx.json
 
-    # Security scanning
   security-scan:
     needs: build-and-push
     runs-on: ubuntu-latest
