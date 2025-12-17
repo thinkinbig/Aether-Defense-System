@@ -16,4 +16,9 @@ func TestNewServiceContext(t *testing.T) {
 	if ctx.Config != cfg {
 		t.Fatalf("expected Config pointer to be preserved")
 	}
+	// When inventoryRedis is not configured, Redis client should remain nil
+	// (unit tests should not require external Redis).
+	if ctx.Redis != nil {
+		t.Fatalf("expected Redis to be nil when inventoryRedis is not configured")
+	}
 }
