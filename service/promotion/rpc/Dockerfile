@@ -1,17 +1,19 @@
 # syntax=docker/dockerfile:1
-# Build stage
+# Ultra-slim optimized build
 FROM golang:1.22-alpine AS builder
 
 WORKDIR /build
 
-# Install build dependencies
-RUN apk add --no-cache git make
+# Install minimal build dependencies
+RUN apk add --no-cache git ca-certificates
 
-# Set Go environment for better caching
+# Set Go environment for maximum optimization
 ENV GOPROXY=https://proxy.golang.org,direct
 ENV GOSUMDB=sum.golang.org
 ENV GOCACHE=/go-cache
 ENV GOMODCACHE=/go-mod-cache
+ENV CGO_ENABLED=0
+ENV GOOS=linux
 
 # Copy go mod files first for better caching
 COPY go.mod go.sum ./
@@ -23,29 +25,26 @@ RUN --mount=type=cache,target=/go-mod-cache \
 # Copy source code
 COPY . .
 
-# Build promotion-rpc with cache mounts and optimizations
+# Build with maximum optimization
 WORKDIR /build/service/promotion/rpc
 RUN --mount=type=cache,target=/go-mod-cache \
     --mount=type=cache,target=/go-cache \
-    CGO_ENABLED=0 GOOS=linux go build \
-    -ldflags="-w -s" \
+    go build \
+    -ldflags="-w -s -X main.version=1.0.0" \
     -trimpath \
+    -buildmode=exe \
     -o promotion-rpc .
 
-# Runtime stage
-FROM alpine:latest
+# Use distroless for minimal runtime
+FROM gcr.io/distroless/static-debian12:nonroot
 
-# Fix for ARM64 builds - install packages without triggers
-RUN apk --no-cache add ca-certificates tzdata --no-scripts
-ENV TZ=Europe/Berlin
-
-WORKDIR /app
-
-# Copy binary from builder
+# Copy binary and config
 COPY --from=builder /build/service/promotion/rpc/promotion-rpc /app/promotion-rpc
-
-# Copy config file (will be overridden by ConfigMap mount)
 COPY service/promotion/rpc/etc/promotion.yaml /app/promotion.yaml
+
+# Set working directory and user
+WORKDIR /app
+USER nonroot:nonroot
 
 # Expose port
 EXPOSE 8080

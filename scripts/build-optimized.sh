@@ -12,7 +12,7 @@ GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
-echo -e "${GREEN}🚀 Starting optimized Docker builds with BuildKit cache...${NC}"
+echo -e "${GREEN}🚀 Starting ultra-slim Docker builds with BuildKit cache...${NC}"
 
 # Services to build
 SERVICES=(
@@ -39,7 +39,7 @@ for service in "${SERVICES[@]}"; do
     echo -e "${GREEN}✅ ${service_name} built successfully${NC}"
 done
 
-echo -e "${GREEN}🎉 All services built successfully with optimized caching!${NC}"
+echo -e "${GREEN}🎉 All services built successfully with ultra-slim optimization!${NC}"
 
 # Show cache usage
 echo -e "${YELLOW}📊 Docker system info:${NC}"
