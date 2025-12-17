@@ -3,7 +3,7 @@
 
 # Global configuration
 global:
-  imageRegistry: ""
+  imageRegistry: "ghcr.io/thinkinbig/aether-defense-system"
   imagePullPolicy: IfNotPresent
   namespace: "" # Will be set per environment
 
@@ -78,7 +78,7 @@ userRpc:
   enabled: true
   replicaCount: 2
   image:
-    repository: aether-defense/user-rpc
+    repository: user-rpc
     tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
@@ -123,7 +123,7 @@ userApi:
   enabled: true
   replicaCount: 2
   image:
-    repository: aether-defense/user-api
+    repository: user-api
     tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
@@ -170,7 +170,7 @@ tradeRpc:
   enabled: false
   replicaCount: 2
   image:
-    repository: aether-defense/trade-rpc
+    repository: trade-rpc
     tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget
@@ -215,7 +215,7 @@ promotionRpc:
   enabled: false
   replicaCount: 2
   image:
-    repository: aether-defense/promotion-rpc
+    repository: promotion-rpc
     tag: latest # Should be specific version in production
     pullPolicy: IfNotPresent
   # Pod Disruption Budget

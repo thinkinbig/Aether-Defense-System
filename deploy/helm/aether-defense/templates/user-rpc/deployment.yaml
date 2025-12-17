@@ -52,7 +52,7 @@ spec:
       {{- end }}
       containers:
       - name: user-rpc
-        image: "{{ .Values.global.imageRegistry }}{{ .Values.userRpc.image.repository }}:{{ .Values.userRpc.image.tag }}"
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.userRpc.image.repository }}:{{ .Values.userRpc.image.tag }}"
         imagePullPolicy: {{ .Values.userRpc.image.pullPolicy }}
         command:
         - /app/user-rpc

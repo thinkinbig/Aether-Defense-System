@@ -52,7 +52,7 @@ spec:
       {{- end }}
       containers:
       - name: user-api
-        image: "{{ .Values.global.imageRegistry }}{{ .Values.userApi.image.repository }}:{{ .Values.userApi.image.tag }}"
+        image: "{{ .Values.global.imageRegistry }}/{{ .Values.userApi.image.repository }}:{{ .Values.userApi.image.tag }}"
         imagePullPolicy: {{ .Values.userApi.image.pullPolicy }}
         command:
         - /app/user-api
