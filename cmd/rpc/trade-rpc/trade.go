@@ -30,6 +30,6 @@ func main() {
 	})
 	defer s.Stop()
 
-	_, _ = fmt.Printf("Starting trade rpc server at %s...\n", c.ListenOn)
+	_, _ = fmt.Printf("Starting trade rpc server at %s...\n", c.RpcServerConf.ListenOn)
 	s.Start()
 }

@@ -8,3 +8,16 @@ Etcd:
   Hosts:
     - 127.0.0.1:2379 # Local etcd
   Key: promotion.rpc
+
+Database:
+  dsn: "" # optional for now; service will skip DB init when empty
+
+InventoryRedis:
+  addr: localhost:6379 # Local Redis
+  password: ""
+  db: 0
+  pool_size: 100
+  min_idle_conns: 10
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s

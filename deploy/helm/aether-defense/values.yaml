@@ -236,6 +236,33 @@ promotionRpc:
     rollingUpdate:
       maxSurge: 1
       maxUnavailable: 0
+  service:
+    type: ClusterIP
+    port: 8080
+    targetPort: 8080
+  config:
+    name: promotion.rpc
+    listenOn: "0.0.0.0:8080"
+    etcd:
+      hosts:
+        - "" # Will be replaced by template with full service name
+      key: promotion.rpc
+    redis:
+      addr: "aether-defense-redis:6379"
+      password: ""
+      db: 0
+      pool_size: 100
+      min_idle_conns: 10
+      dial_timeout: "5s"
+      read_timeout: "3s"
+      write_timeout: "3s"
+  resources:
+    requests:
+      cpu: 100m
+      memory: 128Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
 
 # Network Policy
 networkPolicy:

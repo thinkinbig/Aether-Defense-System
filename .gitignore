@@ -8,6 +8,7 @@ node_modules/
 bin/
 *.exe
 *.test
+promotion-rpc
 user-api
 cmd/api/user-api/user-api
 cmd/rpc/user-rpc/user-rpc

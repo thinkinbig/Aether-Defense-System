@@ -13,11 +13,22 @@ import (
 
 // Config holds database connection configuration.
 type Config struct {
-	DSN             string        `json:"dsn" yaml:"dsn"`                               // Data Source Name
-	MaxOpenConns    int           `json:"max_open_conns" yaml:"max_open_conns"`         // Maximum open connections
-	MaxIdleConns    int           `json:"max_idle_conns" yaml:"max_idle_conns"`         // Maximum idle connections
-	ConnMaxLifetime time.Duration `json:"conn_max_lifetime" yaml:"conn_max_lifetime"`   // Connection max lifetime
-	ConnMaxIdleTime time.Duration `json:"conn_max_idle_time" yaml:"conn_max_idle_time"` // Connection max idle time
+	// Note: We mark fields as optional for go-zero conf.MustLoad.
+	// Defaults are applied in DefaultConfig()/NewClient when values are zero.
+	//lint:ignore SA5008 go-zero config uses json tag options like ",optional"; not for encoding/json.
+	DSN string `json:"dsn,optional"` // Data Source Name
+
+	//lint:ignore SA5008 go-zero config uses json tag options like ",optional"; not for encoding/json.
+	MaxOpenConns int `json:"max_open_conns,optional"`
+
+	//lint:ignore SA5008 go-zero config uses json tag options like ",optional"; not for encoding/json.
+	MaxIdleConns int `json:"max_idle_conns,optional"`
+
+	//lint:ignore SA5008 go-zero config uses json tag options like ",optional"; not for encoding/json.
+	ConnMaxLifetime time.Duration `json:"conn_max_lifetime,optional"`
+
+	//lint:ignore SA5008 go-zero config uses json tag options like ",optional"; not for encoding/json.
+	ConnMaxIdleTime time.Duration `json:"conn_max_idle_time,optional"`
 }
 
 // DefaultConfig returns a default database configuration optimized for high concurrency.

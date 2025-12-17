@@ -112,12 +112,23 @@ services:
     volumes:
       - rocketmq-nameserver-logs:/home/rocketmq/logs
     healthcheck:
-      test: ["CMD", "sh", "-c", "netstat -tuln | grep 9876"]
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep mqnamesrv || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 30s
     networks:
       - aether-defense-network
+
+  rocketmq-broker-init:
+    image: apache/rocketmq:5.2.0
+    container_name: aether-defense-rocketmq-broker-init
+    command: sh -c "mkdir -p /home/rocketmq/store/schedule && chown -R rocketmq:rocketmq /home/rocketmq/store || true"
+    volumes:
+      - rocketmq-broker-store:/home/rocketmq/store
+    user: root
+    profiles:
+      - init
 
   rocketmq-broker:
     image: apache/rocketmq:5.2.0
@@ -137,10 +148,11 @@ services:
       rocketmq-nameserver:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "sh", "-c", "netstat -tuln | grep 10911"]
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep mqbroker || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
+      start_period: 60s
     networks:
       - aether-defense-network
 
