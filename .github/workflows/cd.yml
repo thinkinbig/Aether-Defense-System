@@ -1,4 +1,4 @@
-name: CD - Build and Push
+name: CD
 
 on:
   workflow_run:
@@ -98,19 +98,6 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
-
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ github.sha }}
-          format: spdx-json
-          output-file: sbom-${{ matrix.service.name }}.spdx.json
-
-      - name: Upload SBOM
-        uses: actions/upload-artifact@v4
-        with:
-          name: sbom-${{ matrix.service.name }}
-          path: sbom-${{ matrix.service.name }}.spdx.json
 
   security-scan:
     needs: build-and-push
