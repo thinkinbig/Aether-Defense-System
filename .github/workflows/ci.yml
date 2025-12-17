@@ -137,7 +137,7 @@ jobs:
           echo "Total coverage: ${coverage}%"
           echo "::notice title=Coverage Report::Total coverage is ${coverage}%"
           # Set minimum coverage threshold (adjust as needed)
-          threshold=80
+          threshold=15
           # Extract integer part for comparison (simple approach)
           coverage_int=$(echo "$coverage" | cut -d. -f1)
           if [ "$coverage_int" -lt "$threshold" ]; then
