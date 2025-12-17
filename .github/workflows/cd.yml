@@ -99,6 +99,24 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
+      - name: Wait for image propagation
+        run: sleep 30
+
+      - name: Generate SBOM
+        uses: anchore/sbom-action@v0
+        with:
+          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ github.sha }}
+          format: spdx-json
+          output-file: sbom-${{ matrix.service.name }}.spdx.json
+        continue-on-error: true
+
+      - name: Upload SBOM
+        uses: actions/upload-artifact@v4
+        with:
+          name: sbom-${{ matrix.service.name }}
+          path: sbom-${{ matrix.service.name }}.spdx.json
+        if: always()
+
   security-scan:
     needs: build-and-push
     runs-on: ubuntu-latest
