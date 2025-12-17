@@ -13,9 +13,9 @@ RUN go mod download
 # Copy source code
 COPY . .
 
-# Build user-rpc
-WORKDIR /build/cmd/rpc/user-rpc
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o user-rpc .
+# Build trade-rpc
+WORKDIR /build/service/trade/rpc
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o trade-rpc .
 
 # Runtime stage
 FROM alpine:latest
@@ -27,13 +27,13 @@ ENV TZ=Asia/Shanghai
 WORKDIR /app
 
 # Copy binary from builder
-COPY --from=builder /build/cmd/rpc/user-rpc/user-rpc /app/user-rpc
+COPY --from=builder /build/service/trade/rpc/trade-rpc /app/trade-rpc
 
 # Copy config file (will be overridden by ConfigMap mount)
-COPY service/user/rpc/etc/user.yaml /app/user.yaml
+COPY service/trade/rpc/etc/trade.yaml /app/trade.yaml
 
 # Expose port
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/user-rpc", "-f", "/etc/user-rpc/user.yaml"]
+ENTRYPOINT ["/app/trade-rpc", "-f", "/etc/trade-rpc/trade.yaml"]
