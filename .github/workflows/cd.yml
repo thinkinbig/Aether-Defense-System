@@ -116,7 +116,6 @@ jobs:
             BUILDKIT_INLINE_CACHE=1
 
       - name: Verify image push using GitHub API
-      - name: Verify image push using GitHub API
         run: |
           echo "Verifying image was pushed successfully..."
           # Extract SHA tag format (metadata-action generates sha-{short-sha} format)
@@ -276,8 +275,6 @@ jobs:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Wait for image to be available (GitHub API + Docker)
       - name: Wait for image to be available (GitHub API + Docker)
         run: |
           # Extract SHA tag format (metadata-action generates sha-{short-sha} format)
