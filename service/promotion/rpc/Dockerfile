@@ -20,7 +20,8 @@ RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o promotion-rpc .
 # Runtime stage
 FROM alpine:latest
 
-RUN apk --no-cache add ca-certificates tzdata
+# Fix for ARM64 builds - install packages without triggers
+RUN apk --no-cache add ca-certificates tzdata --no-scripts
 ENV TZ=Asia/Shanghai
 
 WORKDIR /app
