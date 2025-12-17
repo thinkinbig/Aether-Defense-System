@@ -25,14 +25,6 @@ jobs:
     outputs:
       should-deploy: ${{ steps.check.outputs.should-deploy }}
     steps:
-      - name: Debug workflow event
-        run: |
-          echo "Event name: ${{ github.event_name }}"
-          echo "Workflow run conclusion: ${{ github.event.workflow_run.conclusion }}"
-          echo "Workflow run head branch: ${{ github.event.workflow_run.head_branch }}"
-          echo "Current ref: ${{ github.ref }}"
-          echo "Repository: ${{ github.repository }}"
-
       - name: Check if should deploy
         id: check
         run: |
@@ -91,10 +83,11 @@ jobs:
             type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha,prefix={{branch}}-
+            type=sha
             type=raw,value=latest,enable={{is_default_branch}}
 
       - name: Build and push Docker image
+        id: build
         uses: docker/build-push-action@v5
         with:
           context: ${{ matrix.service.context }}
