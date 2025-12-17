@@ -1,0 +1,17 @@
+{{- if .Values.tradeRpc.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-trade-rpc-config
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: trade-rpc
+data:
+  trade.yaml: |
+    Name: {{ .Values.tradeRpc.config.name }}
+    ListenOn: {{ .Values.tradeRpc.config.listenOn }}
+    Etcd:
+      Hosts:
+        - "{{ include "aether-defense.fullname" . }}-etcd-headless:{{ .Values.etcd.service.clientPort }}"
+      Key: {{ .Values.tradeRpc.config.etcd.key }}
+{{- end }}
