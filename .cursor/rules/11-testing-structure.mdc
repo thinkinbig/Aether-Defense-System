@@ -38,7 +38,7 @@ cmd/
 
 #### Unit Test Requirements
 
-- ✅ Every **业务逻辑相关的** exported function/method 必须有对应测试（特别是 `internal/logic`）
+- ✅ Every **Business Related** exported function/method MUST HAVE corresponding test（e.g. `internal/logic`）
 - ✅ Test both success and error paths
 - ✅ Test boundary conditions and edge values
 - ✅ Use mocks to isolate external dependencies (database, Redis, MQ, other services)

@@ -1,0 +1,17 @@
+{{- if .Values.promotionRpc.enabled }}
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ include "aether-defense.fullname" . }}-promotion-rpc-config
+  labels:
+    {{- include "aether-defense.labels" . | nindent 4 }}
+    app.kubernetes.io/component: promotion-rpc
+data:
+  promotion.yaml: |
+    Name: {{ .Values.promotionRpc.config.name }}
+    ListenOn: {{ .Values.promotionRpc.config.listenOn }}
+    Etcd:
+      Hosts:
+        - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
+      Key: {{ .Values.promotionRpc.config.etcd.key }}
+{{- end }}

@@ -1,36 +1,50 @@
-# Build stage
+# syntax=docker/dockerfile:1
+# Ultra-slim optimized build
 FROM golang:1.22-alpine AS builder
 
 WORKDIR /build
 
-# Install build dependencies
-RUN apk add --no-cache git make
+# Install minimal build dependencies
+RUN apk add --no-cache git ca-certificates
 
-# Copy go mod files
+# Set Go environment for maximum optimization
+ENV GOPROXY=https://proxy.golang.org,direct
+ENV GOSUMDB=sum.golang.org
+ENV GOCACHE=/go-cache
+ENV GOMODCACHE=/go-mod-cache
+ENV CGO_ENABLED=0
+ENV GOOS=linux
+
+# Copy go mod files first for better caching
 COPY go.mod go.sum ./
-RUN go mod download
+
+# Download dependencies with cache mount
+RUN --mount=type=cache,target=/go-mod-cache \
+    go mod download
 
 # Copy source code
 COPY . .
 
-# Build user-api
+# Build with maximum optimization
 WORKDIR /build/cmd/api/user-api
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o user-api .
+RUN --mount=type=cache,target=/go-mod-cache \
+    --mount=type=cache,target=/go-cache \
+    go build \
+    -ldflags="-w -s -X main.version=1.0.0" \
+    -trimpath \
+    -buildmode=exe \
+    -o user-api .
 
-# Runtime stage
-FROM alpine:latest
+# Use distroless for minimal runtime
+FROM gcr.io/distroless/static-debian12:nonroot
 
-# Fix for ARM64 builds - install packages without triggers
-RUN apk --no-cache add ca-certificates tzdata --no-scripts
-ENV TZ=Asia/Shanghai
-
-WORKDIR /app
-
-# Copy binary from builder
+# Copy binary and config
 COPY --from=builder /build/cmd/api/user-api/user-api /app/user-api
-
-# Copy config file (will be overridden by ConfigMap mount)
 COPY cmd/api/user-api/etc/user-api.yaml /app/user-api.yaml
+
+# Set working directory and user
+WORKDIR /app
+USER nonroot:nonroot
 
 # Expose port
 EXPOSE 8888
