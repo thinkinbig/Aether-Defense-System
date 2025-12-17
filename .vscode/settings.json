@@ -8,6 +8,9 @@
   "go.installTools": true,
   // Enable gopls diagnostics
   "gopls": {
+    "buildFlags": [
+      "-tags=integration"
+    ],
     "build.directoryFilters": [
       "-node_modules",
       "-vendor"
