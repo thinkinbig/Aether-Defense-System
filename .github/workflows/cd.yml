@@ -1,14 +1,13 @@
 name: CD - Build and Deploy
 
 on:
-  push:
-    branches: [main, develop]
-    tags: ["v*"]
   workflow_run:
     workflows: ["CI"]
     types:
       - completed
     branches: [main, develop]
+  push:
+    tags: ["v*"] # Only for release tags
 
 env:
   REGISTRY: ghcr.io
@@ -29,9 +28,14 @@ jobs:
       - name: Check if should deploy
         id: check
         run: |
-          if [ "${{ github.event_name }}" == "push" ] || [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "Deploy triggered by tag push"
+            echo "should-deploy=true" >> $GITHUB_OUTPUT
+          elif [ "${{ github.event.workflow_run.conclusion }}" == "success" ]; then
+            echo "Deploy triggered by successful CI"
             echo "should-deploy=true" >> $GITHUB_OUTPUT
           else
+            echo "CI failed, skipping deployment"
             echo "should-deploy=false" >> $GITHUB_OUTPUT
           fi
 
