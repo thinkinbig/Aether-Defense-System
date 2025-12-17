@@ -2,12 +2,16 @@ name: CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches:
+      - main
+      - master
+      - develop
+      - "feature/**"
   pull_request:
     branches: [main, master, develop]
+  workflow_dispatch:
 
 env:
-  GO_VERSION: "1.22.2"
   GOLANGCI_LINT_VERSION: "v1.55.2"
 
 jobs:
@@ -22,7 +26,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
           # Cache is automatically enabled - action will detect go.sum
           cache: true
 
@@ -60,9 +64,6 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ["1.22.2"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -70,7 +71,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: go.mod
           # Cache is automatically enabled - action will detect go.sum
           cache: true
 
@@ -107,7 +108,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
           # Cache is automatically enabled - action will detect go.sum
           cache: true
 
@@ -161,10 +162,6 @@ jobs:
   build:
     name: Build Verification
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ["1.22.2"]
-        # Only test on Linux - this is a cloud-native app that runs in Linux containers
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -172,7 +169,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
+          go-version-file: go.mod
           # Cache is automatically enabled - action will detect go.sum
           cache: true
 
@@ -253,7 +250,7 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
+          go-version-file: go.mod
           # Cache is automatically enabled - action will detect go.sum
           cache: true
 
