@@ -116,6 +116,7 @@ jobs:
             BUILDKIT_INLINE_CACHE=1
 
       - name: Verify image push using GitHub API
+      - name: Verify image push using GitHub API
         run: |
           echo "Verifying image was pushed successfully..."
           # Extract SHA tag format (metadata-action generates sha-{short-sha} format)
@@ -212,6 +213,7 @@ jobs:
           IMAGE_FULL_SHA="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:${{ github.sha }}"
 
           # Wait for image to be available with retry
+          # Wait for image to be available with retry
           echo "Waiting for image to be available..."
           sleep 30
 
@@ -276,6 +278,7 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Wait for image to be available (GitHub API + Docker)
+      - name: Wait for image to be available (GitHub API + Docker)
         run: |
           # Extract SHA tag format (metadata-action generates sha-{short-sha} format)
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
@@ -300,6 +303,7 @@ jobs:
           echo "Initial wait for image propagation (20 seconds)..."
           sleep 20
 
+          MAX_RETRIES=12
           MAX_RETRIES=12
           RETRY_COUNT=0
 
@@ -350,9 +354,12 @@ jobs:
             if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
               echo "Attempt $RETRY_COUNT/$MAX_RETRIES: Image not yet available, waiting 12 seconds..."
               sleep 12
+              echo "Attempt $RETRY_COUNT/$MAX_RETRIES: Image not yet available, waiting 12 seconds..."
+              sleep 12
             fi
           done
 
+          # Final attempt with detailed error
           # Final attempt with detailed error
           echo "❌ Error: Image not available after $MAX_RETRIES attempts"
           echo "Total wait time: ~$((20 + MAX_RETRIES * 12)) seconds"
