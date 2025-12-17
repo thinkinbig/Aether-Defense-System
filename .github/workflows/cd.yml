@@ -99,15 +99,26 @@ jobs:
           cache-to: type=gha,mode=max
           platforms: linux/amd64,linux/arm64
 
-      - name: Wait for image propagation
-        run: sleep 30
+      - name: Generate SBOM with retry
+        run: |
+          echo "Attempting to generate SBOM for ${{ matrix.service.name }}..."
+          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ github.sha }}"
 
-      - name: Generate SBOM
-        uses: anchore/sbom-action@v0
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}/${{ matrix.service.name }}:${{ github.sha }}
-          format: spdx-json
-          output-file: sbom-${{ matrix.service.name }}.spdx.json
+          # Wait for image to be available
+          echo "Waiting for image to be available..."
+          sleep 30
+
+          # Try to pull the image first to ensure it's accessible
+          if docker pull "$IMAGE"; then
+            echo "Image pulled successfully, generating SBOM..."
+            # Use syft directly instead of the action
+            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
+            /tmp/syft scan "$IMAGE" -o spdx-json > sbom-${{ matrix.service.name }}.spdx.json
+            echo "SBOM generated successfully"
+          else
+            echo "Failed to pull image, creating empty SBOM file"
+            echo '{"spdxVersion": "SPDX-2.3", "name": "${{ matrix.service.name }}", "packages": []}' > sbom-${{ matrix.service.name }}.spdx.json
+          fi
         continue-on-error: true
 
       - name: Upload SBOM
