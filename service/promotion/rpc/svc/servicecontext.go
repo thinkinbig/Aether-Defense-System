@@ -2,6 +2,7 @@
 package svc
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/aether-defense-system/common/database"
@@ -10,11 +11,18 @@ import (
 	"github.com/aether-defense-system/service/promotion/rpc/repo"
 )
 
+// InventoryRedis defines the minimal Redis operations required by promotion business logic.
+// This indirection keeps unit tests fast and hermetic (no external Redis required).
+type InventoryRedis interface {
+	Get(ctx context.Context, key string) (string, error)
+	DecrStock(ctx context.Context, inventoryKey string, quantity int64) error
+}
+
 // ServiceContext represents the service context for promotion RPC service.
 type ServiceContext struct {
 	Config     *config.Config
 	DB         *database.Client
-	Redis      *redis.Client
+	Redis      InventoryRedis
 	CouponRepo *repo.CouponRepo
 }
 
@@ -22,7 +30,7 @@ type ServiceContext struct {
 func NewServiceContext(c *config.Config) *ServiceContext {
 	var dbClient *database.Client
 	var couponRepo *repo.CouponRepo
-	var redisClient *redis.Client
+	var redisClient InventoryRedis
 
 	// Initialize database client if DSN is configured
 	if c.Database.DSN != "" {

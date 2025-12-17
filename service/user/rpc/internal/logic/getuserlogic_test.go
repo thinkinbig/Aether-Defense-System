@@ -2,8 +2,10 @@ package logic
 
 import (
 	"context"
+	"fmt"
 	"testing"
 
+	"github.com/aether-defense-system/common/database"
 	"github.com/aether-defense-system/service/user/rpc"
 	"github.com/aether-defense-system/service/user/rpc/internal/config"
 	"github.com/aether-defense-system/service/user/rpc/internal/svc"
@@ -36,7 +38,7 @@ func TestGetUserLogic_GetUser_ValidationAndSuccess(t *testing.T) {
 			req: &rpc.GetUserRequest{
 				UserId: 1,
 			},
-			wantErr: true, // Will fail because UserRepo is not initialized in test
+			wantErr: true, // still error in this table-driven test (repo not set here)
 		},
 	}
 
@@ -67,5 +69,56 @@ func TestGetUserLogic_GetUser_ValidationAndSuccess(t *testing.T) {
 				t.Errorf("expected non-empty Mobile")
 			}
 		})
+	}
+}
+
+type fakeUserRepo struct {
+	user *database.User
+	err  error
+}
+
+func (f *fakeUserRepo) GetByID(_ context.Context, _ int64) (*database.User, error) {
+	if f.err != nil {
+		return nil, f.err
+	}
+	if f.user == nil {
+		return nil, fmt.Errorf("user not found")
+	}
+	return f.user, nil
+}
+
+func TestGetUserLogic_GetUser_Success_WithRepo(t *testing.T) {
+	cfg := &config.Config{}
+	svcCtx := &svc.ServiceContext{
+		Config: cfg,
+		UserRepo: &fakeUserRepo{
+			user: &database.User{ID: 1, Username: "u1", Mobile: "13800000000"},
+		},
+	}
+	logic := NewGetUserLogic(context.Background(), svcCtx)
+
+	resp, err := logic.GetUser(&rpc.GetUserRequest{UserId: 1})
+	if err != nil {
+		t.Fatalf("expected no error, got %v", err)
+	}
+	if resp == nil {
+		t.Fatalf("expected non-nil response")
+	}
+	if resp.UserId != 1 || resp.Username != "u1" || resp.Mobile != "13800000000" {
+		t.Fatalf("unexpected response: %+v", resp)
+	}
+}
+
+func TestGetUserLogic_GetUser_RepoError(t *testing.T) {
+	cfg := &config.Config{}
+	svcCtx := &svc.ServiceContext{
+		Config:   cfg,
+		UserRepo: &fakeUserRepo{err: fmt.Errorf("db down")},
+	}
+	logic := NewGetUserLogic(context.Background(), svcCtx)
+
+	_, err := logic.GetUser(&rpc.GetUserRequest{UserId: 1})
+	if err == nil {
+		t.Fatalf("expected error")
 	}
 }
