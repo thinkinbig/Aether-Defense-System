@@ -1,11 +1,15 @@
 name: CD
 
 on:
+  # Trigger when CI workflow completes successfully
+  # Note: workflow_run triggers run on the default branch (main) by default
+  # The branches filter applies to the workflow_run event, not the triggering workflow
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI"] # Must match the name in ci.yml exactly
     types:
       - completed
     branches: [main, develop]
+  # Also trigger on version tag pushes (for manual releases)
   push:
     tags: ["v*"]
 
@@ -247,7 +251,7 @@ jobs:
         continue-on-error: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results-${{ matrix.service }}.sarif"
         if: always() && steps.trivy-sarif.outcome == 'success'
