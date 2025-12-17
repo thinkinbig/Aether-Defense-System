@@ -1,0 +1,10 @@
+# Local development configuration for promotion-rpc
+# Copy this to service/promotion/rpc/etc/promotion.yaml for local testing
+
+Name: promotion.rpc
+ListenOn: 0.0.0.0:8080
+
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379 # Local etcd
+  Key: promotion.rpc

@@ -85,7 +85,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
@@ -112,7 +111,7 @@ jobs:
           cache-to: |
             type=gha,mode=max
             type=registry,ref=${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:cache,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
@@ -186,22 +185,33 @@ jobs:
           IMAGE="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}:${{ github.sha }}"
           echo "Waiting for image to be available: $IMAGE"
 
-          # Try to pull the image with retries
+          # Initial wait for image propagation (shorter for single-arch)
+          echo "Initial wait for image propagation (15 seconds)..."
+          sleep 15
+
           MAX_RETRIES=10
           RETRY_COUNT=0
 
           while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
-            if docker pull "$IMAGE" 2>/dev/null; then
-              echo "Image is now available"
+            # Try to pull the image
+            if docker pull "$IMAGE" >/dev/null 2>&1; then
+              echo "✅ Image is now available and pullable"
+              docker images | grep "${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}" || true
               exit 0
             fi
+
             RETRY_COUNT=$((RETRY_COUNT + 1))
-            echo "Attempt $RETRY_COUNT/$MAX_RETRIES failed, waiting 10 seconds..."
-            sleep 10
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              echo "Attempt $RETRY_COUNT/$MAX_RETRIES: Image not yet available, waiting 10 seconds..."
+              sleep 10
+            fi
           done
 
-          echo "Warning: Image not available after $MAX_RETRIES attempts, continuing anyway"
-        continue-on-error: true
+          echo "❌ Error: Image not available after $MAX_RETRIES attempts"
+          echo "Total wait time: ~$((15 + MAX_RETRIES * 10)) seconds"
+          echo "Checking if build step succeeded..."
+          echo "::error::Image $IMAGE is not available. Please check the build-and-push job logs."
+          exit 1
 
       - name: Run Trivy vulnerability scanner
         id: trivy-sarif

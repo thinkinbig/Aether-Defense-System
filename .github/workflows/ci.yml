@@ -161,7 +161,7 @@ jobs:
     strategy:
       matrix:
         go-version: ["1.22.2"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        # Only test on Linux - this is a cloud-native app that runs in Linux containers
     steps:
       - name: Checkout code
         uses: actions/checkout@v4

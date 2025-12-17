@@ -50,4 +50,4 @@ USER nonroot:nonroot
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/user-rpc", "-f", "/etc/user-rpc/user.yaml"]
+ENTRYPOINT ["/app/user-rpc", "-f", "/app/user.yaml"]

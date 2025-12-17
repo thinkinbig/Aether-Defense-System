@@ -1,0 +1,10 @@
+# Local development configuration for user-rpc
+# Copy this to service/user/rpc/etc/user.yaml for local testing
+
+Name: user.rpc
+ListenOn: 0.0.0.0:8080
+
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379 # Local etcd
+  Key: user.rpc
