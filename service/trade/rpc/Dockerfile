@@ -50,4 +50,4 @@ USER nonroot:nonroot
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/trade-rpc", "-f", "/etc/trade-rpc/trade.yaml"]
+ENTRYPOINT ["/app/trade-rpc", "-f", "/app/trade.yaml"]

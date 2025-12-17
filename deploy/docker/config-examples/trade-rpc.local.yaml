@@ -1,0 +1,10 @@
+# Local development configuration for trade-rpc
+# Copy this to service/trade/rpc/etc/trade.yaml for local testing
+
+Name: trade.rpc
+ListenOn: 0.0.0.0:8080
+
+Etcd:
+  Hosts:
+    - 127.0.0.1:2379 # Local etcd
+  Key: trade.rpc

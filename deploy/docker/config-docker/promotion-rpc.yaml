@@ -1,0 +1,10 @@
+# Docker environment configuration for promotion-rpc
+# This config uses service names from docker-compose network
+
+Name: promotion.rpc
+ListenOn: 0.0.0.0:8080
+
+Etcd:
+  Hosts:
+    - etcd:2379 # Use service name in docker network
+  Key: promotion.rpc

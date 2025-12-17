@@ -1,0 +1,12 @@
+# Local development configuration for user-api
+# Copy this to cmd/api/user-api/etc/user-api.yaml for local testing
+
+Name: user-api
+Host: 0.0.0.0
+Port: 8888
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379 # Local etcd
+    Key: user.rpc

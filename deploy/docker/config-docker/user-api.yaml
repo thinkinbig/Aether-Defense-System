@@ -1,0 +1,12 @@
+# Docker environment configuration for user-api
+# This config uses service names from docker-compose network
+
+Name: user-api
+Host: 0.0.0.0
+Port: 8888
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379 # Use service name in docker network
+    Key: user.rpc

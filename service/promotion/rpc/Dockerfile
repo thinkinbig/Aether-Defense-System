@@ -50,4 +50,4 @@ USER nonroot:nonroot
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/promotion-rpc", "-f", "/etc/promotion-rpc/promotion.yaml"]
+ENTRYPOINT ["/app/promotion-rpc", "-f", "/app/promotion.yaml"]
