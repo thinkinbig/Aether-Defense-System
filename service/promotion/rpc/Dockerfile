@@ -22,7 +22,7 @@ FROM alpine:latest
 
 # Fix for ARM64 builds - install packages without triggers
 RUN apk --no-cache add ca-certificates tzdata --no-scripts
-ENV TZ=Asia/Shanghai
+ENV TZ=Europe/Berlin
 
 WORKDIR /app
 
