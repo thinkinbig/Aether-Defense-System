@@ -22,6 +22,13 @@ This is a high-concurrency microservices system built with Go-Zero framework, ha
 7. **NEVER skip tests**
 8. **NEVER skip documentation**
 
+## Reference Projects
+
+- See `00-reference-projects.mdc` for:
+  - Reference projects for business logic and system design patterns
+  - When to reference external projects for implementation guidance
+  - How to adapt patterns from reference projects to our Go/go-zero architecture
+
 ## AI Assistant Rules and Tools
 
 - See `00-ai-tools-and-workflow.mdc` for:

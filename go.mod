@@ -3,6 +3,7 @@ module github.com/aether-defense-system
 go 1.22.2
 
 require (
+	github.com/go-sql-driver/mysql v1.9.3
 	github.com/redis/go-redis/v9 v9.16.0
 	github.com/zeromicro/go-zero v1.9.3
 	google.golang.org/grpc v1.65.0
@@ -10,6 +11,7 @@ require (
 )
 
 require (
+	filippo.io/edwards25519 v1.1.0 // indirect
 	github.com/beorn7/perks v1.0.1 // indirect
 	github.com/cenkalti/backoff/v4 v4.3.0 // indirect
 	github.com/cespare/xxhash/v2 v2.3.0 // indirect
