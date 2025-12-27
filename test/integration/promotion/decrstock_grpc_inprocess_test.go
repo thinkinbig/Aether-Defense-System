@@ -16,7 +16,9 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/aether-defense-system/service/promotion/rpc"
-	"github.com/aether-defense-system/service/promotion/rpc/config-internal"
+	"github.com/aether-defense-system/service/promotion/rpc/server"
+	"github.com/aether-defense-system/service/promotion/rpc/svc"
+	"github.com/aether-defense-system/test/integration"
 )
 
 // This test is the "moved" version of the previously-added integration test that directly imported
