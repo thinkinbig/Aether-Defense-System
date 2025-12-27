@@ -5,8 +5,8 @@ Port: 8889
 # JWT configuration
 # AccessSecret should be set via environment variable JWT_SECRET for security
 Auth:
-  AccessSecret: ${JWT_SECRET}  # Read from environment variable
-  AccessExpire: 7200  # Token expiration time in seconds (2 hours)
+  AccessSecret: ${JWT_SECRET} # Read from environment variable
+  AccessExpire: 7200 # Token expiration time in seconds (2 hours)
 
 # Trade RPC client configuration
 TradeRpc:
