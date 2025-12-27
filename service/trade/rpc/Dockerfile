@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/go-mod-cache \
 COPY . .
 
 # Build with maximum optimization
-WORKDIR /build/cmd/rpc/trade-rpc
+WORKDIR /build/service/trade/rpc/cmd/trade-rpc
 RUN --mount=type=cache,target=/go-mod-cache \
     --mount=type=cache,target=/go-cache \
     go build \
@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/go-mod-cache \
 FROM gcr.io/distroless/static-debian12:nonroot
 
 # Copy binary and config
-COPY --from=builder /build/cmd/rpc/trade-rpc/trade-rpc /app/trade-rpc
+COPY --from=builder /build/service/trade/rpc/cmd/trade-rpc/trade-rpc /app/trade-rpc
 COPY service/trade/rpc/etc/trade.yaml /app/trade.yaml
 
 # Set working directory and user

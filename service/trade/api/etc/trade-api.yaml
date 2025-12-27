@@ -1,0 +1,26 @@
+Name: trade-api
+Host: 0.0.0.0
+Port: 8889
+
+# JWT configuration
+# Auth:
+#   AccessSecret: your-secret-key
+#   AccessExpire: 7200
+
+# Trade RPC client configuration
+TradeRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: trade.rpc
+
+# Logging
+Log:
+  ServiceName: trade-api
+  Mode: file
+  Path: logs
+  Level: info
+  Compress: true
+  KeepDays: 7
+  StackCooldownMillis: 100
+
