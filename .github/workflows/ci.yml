@@ -12,7 +12,7 @@ on:
   workflow_dispatch:
 
 env:
-  GOLANGCI_LINT_VERSION: "v1.55.2"
+  GOLANGCI_LINT_VERSION: "v1.64.8"
 
 jobs:
   # Code formatting and linting
