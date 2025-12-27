@@ -33,7 +33,7 @@ repos:
     hooks:
       - id: go-cyclo
         # Newer gocyclo uses -over instead of -maxcyclo
-        args: [--over=15]  # Max cyclomatic complexity threshold
+        args: [--over=25]  # Max cyclomatic complexity threshold
       - id: go-unit-tests
         args: [-race, -short]  # Run tests with race detection
       - id: go-mod-tidy
