@@ -16,8 +16,8 @@ Start infrastructure services and run applications locally with `go run`:
 docker-compose -f deploy/docker/docker-compose.yml up -d etcd redis mysql
 
 # Then run services locally
-go run ./cmd/rpc/user-rpc
-go run ./cmd/api/user-api
+go run ./service/user/rpc/cmd/user-rpc
+go run ./service/user/api/cmd/user-api
 ```
 
 ### Option 2: Build and Start All Services (Containerized)
@@ -182,7 +182,7 @@ docker-compose -f deploy/docker/docker-compose.yml up -d
 2. Update service configs to use localhost:
    ```bash
    # Copy local config examples
-   cp deploy/docker/config-examples/user-api.local.yaml cmd/api/user-api/etc/user-api.yaml
+   cp deploy/docker/config-examples/user-api.local.yaml service/user/api/etc/user-api.yaml
    cp deploy/docker/config-examples/user-rpc.local.yaml service/user/rpc/etc/user.yaml
    cp deploy/docker/config-examples/trade-rpc.local.yaml service/trade/rpc/etc/trade.yaml
    cp deploy/docker/config-examples/promotion-rpc.local.yaml service/promotion/rpc/etc/promotion.yaml
@@ -190,8 +190,8 @@ docker-compose -f deploy/docker/docker-compose.yml up -d
 
 3. Run services locally:
    ```bash
-   go run ./cmd/rpc/user-rpc
-   go run ./cmd/api/user-api
+   go run ./service/user/rpc/cmd/user-rpc
+   go run ./service/user/api/cmd/user-api
    ```
 
 ### Running Services in Docker (Option 2: Everything Containerized)

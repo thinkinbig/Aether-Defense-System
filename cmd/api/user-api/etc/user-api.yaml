@@ -1,9 +1,0 @@
-Name: user-api
-Host: 0.0.0.0
-Port: 8888
-
-UserRpc:
-  Etcd:
-    Hosts:
-      - aether-defense-etcd-headless:2379
-    Key: user.rpc

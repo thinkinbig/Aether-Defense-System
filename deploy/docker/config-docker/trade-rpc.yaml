@@ -8,3 +8,25 @@ Etcd:
   Hosts:
     - etcd:2379 # Use service name in docker network
   Key: trade.rpc
+
+Database:
+  DSN: "aether:aether123@tcp(mysql:3306)/aether_defense?charset=utf8mb4&parseTime=True&loc=Local"
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: user.rpc
+
+PromotionRpc:
+  Etcd:
+    Hosts:
+      - etcd:2379
+    Key: promotion.rpc
+
+RocketMQ:
+  NameServer: "rocketmq-nameserver:9876"
+  Group: "trade-producer-group"
+  Topic: "order-topic"
+  RetryTimes: 2
+  SendTimeout: 3000

@@ -2,6 +2,7 @@
 // goctl 1.9.2
 // Source: trade.proto
 
+// Package tradeservice provides the client interface for the trade service.
 package tradeservice
 
 import (

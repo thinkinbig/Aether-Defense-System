@@ -1,4 +1,8 @@
+//go:build internal
+// +build internal
+
 // Package main starts the trade RPC service.
+// This file uses the "internal" build tag to allow importing internal packages.
 package main
 
 import (
@@ -10,26 +14,27 @@ import (
 	"google.golang.org/grpc"
 
 	"github.com/aether-defense-system/service/trade/rpc"
+	"github.com/aether-defense-system/service/trade/rpc/internal/config"
+	"github.com/aether-defense-system/service/trade/rpc/internal/server"
+	"github.com/aether-defense-system/service/trade/rpc/internal/svc"
 )
 
 var configFile = flag.String("f", "service/trade/rpc/etc/trade.yaml", "the config file")
 
-// Config mirrors the RPC server configuration for trade service.
-type Config struct {
-	zrpc.RpcServerConf
-}
-
 func main() {
 	flag.Parse()
 
-	var c Config
+	var c config.Config
 	conf.MustLoad(*configFile, &c)
 
+	// Create service context with all dependencies
+	ctx := svc.NewServiceContext(&c)
+
 	s := zrpc.MustNewServer(c.RpcServerConf, func(grpcServer *grpc.Server) {
-		rpc.RegisterTradeServiceServer(grpcServer, &rpc.TradeService{})
+		rpc.RegisterTradeServiceServer(grpcServer, server.NewTradeServiceServer(ctx))
 	})
 	defer s.Stop()
 
-	_, _ = fmt.Printf("Starting trade rpc server at %s...\n", c.RpcServerConf.ListenOn)
+	_, _ = fmt.Printf("Starting trade rpc server at %s...\n", c.ListenOn)
 	s.Start()
 }

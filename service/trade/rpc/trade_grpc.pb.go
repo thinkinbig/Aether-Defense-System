@@ -4,10 +4,12 @@
 // - protoc             v3.21.12
 // source: service/trade/rpc/trade.proto
 
+// Package rpc contains generated gRPC code for the trade service.
 package rpc
 
 import (
 	context "context"
+
 	grpc "google.golang.org/grpc"
 	codes "google.golang.org/grpc/codes"
 	status "google.golang.org/grpc/status"

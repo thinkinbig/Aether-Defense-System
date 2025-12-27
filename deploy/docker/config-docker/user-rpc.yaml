@@ -8,3 +8,6 @@ Etcd:
   Hosts:
     - etcd:2379 # Use service name in docker network
   Key: user.rpc
+
+Database:
+  DSN: "aether:aether123@tcp(mysql:3306)/aether_defense?charset=utf8mb4&parseTime=True&loc=Local"

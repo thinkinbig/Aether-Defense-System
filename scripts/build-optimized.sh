@@ -3,6 +3,14 @@
 # Optimized Docker build script with BuildKit cache
 set -e
 
+# Get the directory where the script is located
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Get the project root (parent of scripts directory)
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+
+# Change to project root
+cd "${PROJECT_ROOT}"
+
 # Enable BuildKit
 export DOCKER_BUILDKIT=1
 
@@ -16,8 +24,9 @@ echo -e "${GREEN}🚀 Starting ultra-slim Docker builds with BuildKit cache...${
 
 # Services to build
 SERVICES=(
-    "cmd/api/user-api:user-api"
-    "cmd/rpc/user-rpc:user-rpc"
+    "service/user/api:user-api"
+    "service/user/rpc:user-rpc"
+    "service/trade/api:trade-api"
     "service/trade/rpc:trade-rpc"
     "service/promotion/rpc:promotion-rpc"
 )

@@ -71,7 +71,7 @@ services:
       - MYSQL_DATABASE=aether_defense
       - MYSQL_USER=aether
       - MYSQL_PASSWORD=aether123
-      - TZ=Asia/Shanghai
+      - TZ=Europe/Berlin
     ports:
       - "3306:3306"
     volumes:
@@ -160,7 +160,7 @@ services:
   user-rpc:
     build:
       context: ../..
-      dockerfile: cmd/rpc/user-rpc/Dockerfile
+      dockerfile: service/user/rpc/Dockerfile
     container_name: aether-defense-user-rpc
     ports:
       - "8080:8080"
@@ -180,7 +180,7 @@ services:
   user-api:
     build:
       context: ../..
-      dockerfile: cmd/api/user-api/Dockerfile
+      dockerfile: service/user/api/Dockerfile
     container_name: aether-defense-user-api
     ports:
       - "8888:8888"

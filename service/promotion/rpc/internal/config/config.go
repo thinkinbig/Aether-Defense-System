@@ -13,6 +13,6 @@ import (
 // The public Config is defined in the parent rpc package.
 type Config struct {
 	zrpc.RpcServerConf
-	Database database.Config `json:"database" yaml:"database"`
-	Redis    redis.Config    `json:"redis" yaml:"redis"`
+	Database       database.Config `json:"database" yaml:"database"`
+	InventoryRedis redis.Config    `json:"inventoryRedis" yaml:"inventoryRedis"`
 }

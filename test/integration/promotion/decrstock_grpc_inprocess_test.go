@@ -16,16 +16,11 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 
 	"github.com/aether-defense-system/service/promotion/rpc"
-	"github.com/aether-defense-system/service/promotion/rpc/config-internal"
 	"github.com/aether-defense-system/service/promotion/rpc/server"
 	"github.com/aether-defense-system/service/promotion/rpc/svc"
 	"github.com/aether-defense-system/test/integration"
 )
 
-// This test is the "moved" version of the previously-added integration test that directly imported
-// internal/logic. Per Go's internal package rules, tests under test/integration cannot import
-// service/.../internal/* packages. Instead, we validate the same behavior through an in-process gRPC
-// server, which exercises internal/logic via the generated server implementation.
 func TestIntegration_StockDeduction_GrpcInProcess(t *testing.T) {
 	env := integration.SetupTestEnvironment(t)
 	redisCtx := env.Context()
@@ -48,8 +43,10 @@ func TestIntegration_StockDeduction_GrpcInProcess(t *testing.T) {
 	grpcServer := grpc.NewServer()
 	t.Cleanup(grpcServer.Stop)
 
+	// Create ServiceContext directly since we can't import internal/config
+	// The test only needs Redis, so we can set Config to nil
 	svcCtx := &svc.ServiceContext{
-		Config: &config.Config{},
+		Config: nil,
 		Redis:  env.Redis,
 	}
 	rpc.RegisterPromotionServiceServer(grpcServer, server.NewPromotionServiceServer(svcCtx))
