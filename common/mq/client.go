@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/apache/rocketmq-client-go/v2"
+	rocketmq "github.com/apache/rocketmq-client-go/v2"
 	"github.com/apache/rocketmq-client-go/v2/primitive"
 	"github.com/apache/rocketmq-client-go/v2/producer"
 	"github.com/zeromicro/go-zero/core/logx"
@@ -50,9 +50,9 @@ type transactionListener struct {
 // Note: RocketMQ API doesn't provide context, so we use context.Background().
 func (tl *transactionListener) ExecuteLocalTransaction(msg *primitive.Message) primitive.LocalTransactionState {
 	ctx := context.Background()
-	// Convert Message to MessageExt for our executor
+	newMsg := primitive.NewMessage(msg.Topic, msg.Body)
 	msgExt := &primitive.MessageExt{
-		Message: *msg,
+		Message: *newMsg,
 	}
 
 	state, err := tl.executor(ctx, msgExt)
@@ -98,7 +98,11 @@ func (tl *transactionListener) CheckLocalTransaction(msg *primitive.MessageExt) 
 }
 
 // NewTransactionProducer creates a new RocketMQ transaction producer.
-func NewTransactionProducer(cfg *Config, executor LocalTransactionExecutor, checkBack CheckBackExecutor) (*TransactionProducer, error) {
+func NewTransactionProducer(
+	cfg *Config,
+	executor LocalTransactionExecutor,
+	checkBack CheckBackExecutor,
+) (*TransactionProducer, error) {
 	if cfg == nil {
 		return nil, fmt.Errorf("mq config cannot be nil")
 	}
@@ -153,7 +157,10 @@ func NewTransactionProducer(cfg *Config, executor LocalTransactionExecutor, chec
 }
 
 // SendMessageInTransaction sends a transactional message.
-func (tp *TransactionProducer) SendMessageInTransaction(ctx context.Context, msg *primitive.Message) (*primitive.SendResult, error) {
+func (tp *TransactionProducer) SendMessageInTransaction(
+	ctx context.Context,
+	msg *primitive.Message,
+) (*primitive.SendResult, error) {
 	if msg == nil {
 		return nil, fmt.Errorf("message cannot be nil")
 	}

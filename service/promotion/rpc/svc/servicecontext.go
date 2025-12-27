@@ -7,7 +7,8 @@ import (
 
 	"github.com/aether-defense-system/common/database"
 	"github.com/aether-defense-system/common/redis"
-	"github.com/aether-defense-system/service/promotion/rpc/config-internal"
+	"github.com/aether-defense-system/service/promotion/rpc"
+	"github.com/aether-defense-system/service/promotion/rpc/internal/config"
 	"github.com/aether-defense-system/service/promotion/rpc/repo"
 )
 
@@ -60,4 +61,16 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 		Redis:      redisClient,
 		CouponRepo: couponRepo,
 	}
+}
+
+// NewServiceContextFromPublic creates a new service context from the public config type.
+// This allows cmd files outside the service package to create ServiceContext.
+func NewServiceContextFromPublic(publicCfg *rpc.Config) *ServiceContext {
+	// Convert public config to internal config
+	internalCfg := &config.Config{
+		RpcServerConf:  publicCfg.RpcServerConf,
+		Database:       publicCfg.Database,
+		InventoryRedis: publicCfg.InventoryRedis,
+	}
+	return NewServiceContext(internalCfg)
 }

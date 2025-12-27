@@ -3,7 +3,7 @@ package svc
 import (
 	"testing"
 
-	"github.com/aether-defense-system/service/promotion/rpc/config-internal"
+	"github.com/aether-defense-system/service/promotion/rpc/internal/config"
 )
 
 func TestNewServiceContext(t *testing.T) {
