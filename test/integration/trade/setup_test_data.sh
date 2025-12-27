@@ -35,4 +35,3 @@ echo "Inventory keys set:"
 echo "  - inventory:course:5001 = 100"
 echo "  - inventory:course:5003 = 100"
 echo "  - inventory:course:5004 = 100"
-

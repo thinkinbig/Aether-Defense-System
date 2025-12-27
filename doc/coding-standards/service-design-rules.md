@@ -318,7 +318,7 @@ func init() {
 每个服务应该有独立的 Dockerfile：
 
 ```dockerfile
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 WORKDIR /app
 COPY . .
 RUN go build -o trade-rpc cmd/rpc/trade-rpc/trade.go

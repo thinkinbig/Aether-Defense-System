@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Ultra-slim optimized build
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
@@ -51,4 +51,3 @@ EXPOSE 8888
 
 # Run the binary
 ENTRYPOINT ["/app/user-api", "-f", "/app/user-api.yaml"]
-

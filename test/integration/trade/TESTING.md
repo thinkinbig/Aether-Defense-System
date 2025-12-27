@@ -78,7 +78,7 @@ go test -tags=integration ./test/integration/trade -v -run TestIntegration_Place
 
 ### Success Cases
 
-1. **PlaceOrder_Success**: 
+1. **PlaceOrder_Success**:
    - Valid user places order with valid course IDs
    - Order is created in database
    - RocketMQ message is sent
@@ -138,4 +138,3 @@ All tests should pass when:
 - Network connectivity is available
 
 Tests will skip gracefully if services are unavailable, so they won't fail in CI/CD when services aren't running.
-

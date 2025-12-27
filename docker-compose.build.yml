@@ -7,7 +7,7 @@ services:
       context: .
       dockerfile: service/user/api/Dockerfile
       cache_from:
-        - golang:1.22-alpine
+        - golang:1.25-alpine
       target: builder
     environment:
       - DOCKER_BUILDKIT=1
@@ -17,7 +17,7 @@ services:
       context: .
       dockerfile: service/user/rpc/Dockerfile
       cache_from:
-        - golang:1.22-alpine
+        - golang:1.25-alpine
       target: builder
     environment:
       - DOCKER_BUILDKIT=1
@@ -27,7 +27,7 @@ services:
       context: .
       dockerfile: service/trade/rpc/Dockerfile
       cache_from:
-        - golang:1.22-alpine
+        - golang:1.25-alpine
       target: builder
     environment:
       - DOCKER_BUILDKIT=1
@@ -37,7 +37,7 @@ services:
       context: .
       dockerfile: service/promotion/rpc/Dockerfile
       cache_from:
-        - golang:1.22-alpine
+        - golang:1.25-alpine
       target: builder
     environment:
       - DOCKER_BUILDKIT=1

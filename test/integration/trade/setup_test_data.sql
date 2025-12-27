@@ -9,7 +9,6 @@ INSERT IGNORE INTO user (id, username, mobile, status, create_time, update_time)
 VALUES (1001, 'testuser', '13800138000', 1, NOW(), NOW());
 
 -- Verify the user was created
-SELECT 'Test user created successfully' AS status, id, username, mobile, status 
-FROM user 
+SELECT 'Test user created successfully' AS status, id, username, mobile, status
+FROM user
 WHERE id = 1001;
-

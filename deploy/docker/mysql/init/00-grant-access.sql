@@ -15,4 +15,3 @@ GRANT ALL PRIVILEGES ON aether_defense.* TO 'aether'@'%';
 
 -- Flush privileges to apply changes
 FLUSH PRIVILEGES;
-

@@ -10,8 +10,9 @@ import (
 
 // ServiceContext wires configuration and external dependencies for trade-api.
 type ServiceContext struct {
-	Config   *config.Config
-	TradeRPC tradeservice.TradeService
+	Config    *config.Config
+	TradeRPC  tradeservice.TradeService
+	JWTSecret string // JWT access secret for authentication
 }
 
 // NewServiceContext creates a new ServiceContext.
@@ -21,7 +22,8 @@ func NewServiceContext(c *config.Config) *ServiceContext {
 		tradeRPC = tradeservice.NewTradeService(zrpc.MustNewClient(*c.TradeRPC))
 	}
 	return &ServiceContext{
-		Config:   c,
-		TradeRPC: tradeRPC,
+		Config:    c,
+		TradeRPC:  tradeRPC,
+		JWTSecret: c.Auth.AccessSecret,
 	}
 }

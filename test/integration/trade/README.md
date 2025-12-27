@@ -10,10 +10,10 @@ This directory contains integration tests for the trade service, verifying the c
   - Verifies order creation in database
   - Verifies RocketMQ message sending
   - Verifies user validation
-  
+
 - **TestIntegration_PlaceOrder_InvalidUser**: Tests order placement with invalid user
   - Verifies error handling for non-existent users
-  
+
 - **TestIntegration_PlaceOrder_EmptyCourseIds**: Tests order placement with empty course list
   - Verifies validation of required fields
 
@@ -22,7 +22,7 @@ This directory contains integration tests for the trade service, verifying the c
 - **TestIntegration_CancelOrder_Success**: Tests successful order cancellation
   - Verifies order status update
   - Verifies ownership validation
-  
+
 - **TestIntegration_CancelOrder_InvalidUser**: Tests cancellation with wrong user
   - Verifies authorization checks
 
@@ -75,4 +75,3 @@ Tests use dynamic order IDs based on timestamps to avoid conflicts. Test course 
 - Tests require a test user (ID 1001) to exist in the database
 - Inventory deduction happens asynchronously via RocketMQ, so tests may need to wait for message consumption
 - Tests use real services, not mocks, to verify end-to-end integration
-

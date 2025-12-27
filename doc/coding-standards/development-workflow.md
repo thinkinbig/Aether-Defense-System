@@ -303,7 +303,7 @@ jobs:
       - uses: actions/checkout@v3
       - uses: actions/setup-go@v4
         with:
-          go-version: '1.21'
+          go-version: '1.25'
 
       - name: Run tests
         run: go test -race -coverprofile=coverage.out ./...

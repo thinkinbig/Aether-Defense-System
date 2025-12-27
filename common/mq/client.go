@@ -47,7 +47,7 @@ type transactionListener struct {
 }
 
 // ExecuteLocalTransaction executes the local transaction.
-// Note: RocketMQ API doesn't provide context, so we use context.Background()
+// Note: RocketMQ API doesn't provide context, so we use context.Background().
 func (tl *transactionListener) ExecuteLocalTransaction(msg *primitive.Message) primitive.LocalTransactionState {
 	ctx := context.Background()
 	// Convert Message to MessageExt for our executor
@@ -75,7 +75,7 @@ func (tl *transactionListener) ExecuteLocalTransaction(msg *primitive.Message) p
 }
 
 // CheckLocalTransaction checks the status of a local transaction.
-// Note: RocketMQ API doesn't provide context, so we use context.Background()
+// Note: RocketMQ API doesn't provide context, so we use context.Background().
 func (tl *transactionListener) CheckLocalTransaction(msg *primitive.MessageExt) primitive.LocalTransactionState {
 	ctx := context.Background()
 	state, err := tl.checkBack(ctx, msg)

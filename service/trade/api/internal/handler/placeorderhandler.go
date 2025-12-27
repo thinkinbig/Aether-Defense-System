@@ -21,20 +21,25 @@ func PlaceOrderHandler(svcCtx *svc.ServiceContext) http.HandlerFunc {
 			return
 		}
 
-		// Extract user_id from JWT token
-		// In go-zero, JWT claims are typically stored in the request context
-		// For now, we'll extract it from the context or header
-		// This is a placeholder - actual JWT extraction should be done via middleware
-		userID := int64(0)
-		if userIDVal := r.Context().Value("userId"); userIDVal != nil {
-			if id, ok := userIDVal.(int64); ok {
-				userID = id
-			}
+		// Extract user_id from JWT token (set by go-zero JWT middleware)
+		// The JWT middleware validates the token and sets userId in context
+		userIDVal := r.Context().Value("userId")
+		if userIDVal == nil {
+			logx.WithContext(r.Context()).Errorf("missing user_id in JWT token")
+			http.Error(w, "unauthorized: missing user_id", http.StatusUnauthorized)
+			return
+		}
+
+		userID, ok := userIDVal.(int64)
+		if !ok {
+			logx.WithContext(r.Context()).Errorf("invalid user_id type in JWT token: %T", userIDVal)
+			http.Error(w, "unauthorized: invalid user_id", http.StatusUnauthorized)
+			return
 		}
 
 		if userID <= 0 {
-			logx.WithContext(r.Context()).Errorf("invalid or missing user_id in request")
-			http.Error(w, "unauthorized", http.StatusUnauthorized)
+			logx.WithContext(r.Context()).Errorf("invalid user_id value: %d", userID)
+			http.Error(w, "unauthorized: invalid user_id", http.StatusUnauthorized)
 			return
 		}
 

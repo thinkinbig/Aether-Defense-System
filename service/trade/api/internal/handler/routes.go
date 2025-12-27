@@ -8,6 +8,12 @@ import (
 
 // RegisterHandlers registers all HTTP handlers.
 func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
+	// Enable JWT authentication if AccessSecret is configured
+	var jwtOption rest.RouteOption
+	if serverCtx.JWTSecret != "" {
+		jwtOption = rest.WithJwt(serverCtx.JWTSecret)
+	}
+
 	server.AddRoutes(
 		[]rest.Route{
 			{
@@ -16,5 +22,6 @@ func RegisterHandlers(server *rest.Server, serverCtx *svc.ServiceContext) {
 				Handler: PlaceOrderHandler(serverCtx),
 			},
 		},
+		jwtOption,
 	)
 }
