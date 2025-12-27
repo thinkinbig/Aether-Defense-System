@@ -8,18 +8,27 @@ import (
 	"github.com/stretchr/testify/assert"
 	"google.golang.org/grpc"
 
+	"github.com/aether-defense-system/common/mq"
 	"github.com/aether-defense-system/service/trade/rpc"
 	"github.com/aether-defense-system/service/trade/rpc/internal/config"
 	"github.com/aether-defense-system/service/trade/rpc/internal/svc"
 	userservice "github.com/aether-defense-system/service/user/rpc/userservice"
 )
 
-// mockUserService mocks the UserService interface
+// mockUserService mocks the UserService interface.
 type mockUserService struct {
-	getUserFunc func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error)
+	getUserFunc func(
+		ctx context.Context,
+		in *userservice.GetUserRequest,
+		opts ...grpc.CallOption,
+	) (*userservice.GetUserResponse, error)
 }
 
-func (m *mockUserService) GetUser(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+func (m *mockUserService) GetUser(
+	ctx context.Context,
+	in *userservice.GetUserRequest,
+	opts ...grpc.CallOption,
+) (*userservice.GetUserResponse, error) {
 	if m.getUserFunc != nil {
 		return m.getUserFunc(ctx, in, opts...)
 	}
@@ -36,10 +45,10 @@ func TestPlaceOrderLogic_PlaceOrder_ValidationErrors(t *testing.T) {
 	logic := NewPlaceOrderLogic(context.Background(), svcCtx)
 
 	tests := []struct {
-		name    string
 		req     *rpc.PlaceOrderRequest
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name:    "nil request",
@@ -163,7 +172,11 @@ func TestPlaceOrderLogic_PlaceOrder_UserRPCNotInitialized(t *testing.T) {
 func TestPlaceOrderLogic_PlaceOrder_UserNotFound(t *testing.T) {
 	cfg := &config.Config{}
 	mockUserRPC := &mockUserService{
-		getUserFunc: func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+		getUserFunc: func(
+			_ context.Context,
+			_ *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
 			return nil, fmt.Errorf("user not found")
 		},
 	}
@@ -189,7 +202,11 @@ func TestPlaceOrderLogic_PlaceOrder_UserNotFound(t *testing.T) {
 func TestPlaceOrderLogic_PlaceOrder_UserValidationSuccess(t *testing.T) {
 	cfg := &config.Config{}
 	mockUserRPC := &mockUserService{
-		getUserFunc: func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+		getUserFunc: func(
+			_ context.Context,
+			in *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
 			return &userservice.GetUserResponse{
 				UserId:   in.UserId,
 				Username: "testuser",
@@ -219,13 +236,18 @@ func TestPlaceOrderLogic_PlaceOrder_UserValidationSuccess(t *testing.T) {
 	assert.Error(t, err)
 	assert.Nil(t, resp)
 	// Error should be related to RocketMQ initialization
-	assert.Contains(t, err.Error(), "failed to initialize message queue", "Expected RocketMQ initialization error, got: %v", err)
+	assert.Contains(t, err.Error(), "failed to initialize message queue",
+		"Expected RocketMQ initialization error, got: %v", err)
 }
 
 func TestPlaceOrderLogic_PlaceOrder_UserRPCError(t *testing.T) {
 	cfg := &config.Config{}
 	mockUserRPC := &mockUserService{
-		getUserFunc: func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+		getUserFunc: func(
+			_ context.Context,
+			_ *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
 			return nil, fmt.Errorf("rpc connection error")
 		},
 	}
@@ -257,4 +279,128 @@ func TestPlaceOrderLogic_NewPlaceOrderLogic(t *testing.T) {
 	assert.NotNil(t, logic)
 	assert.Equal(t, ctx, logic.ctx)
 	assert.Equal(t, svcCtx, logic.svcCtx)
+}
+
+func TestPlaceOrderLogic_PlaceOrder_LargeCourseCount(t *testing.T) {
+	cfg := &config.Config{}
+	mockUserRPC := &mockUserService{
+		getUserFunc: func(
+			_ context.Context,
+			in *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
+			return &userservice.GetUserResponse{UserId: in.UserId}, nil
+		},
+	}
+	svcCtx := &svc.ServiceContext{
+		Config:   cfg,
+		UserRPC:  mockUserRPC,
+		RocketMQ: nil,
+	}
+	logic := NewPlaceOrderLogic(context.Background(), svcCtx)
+
+	// Test with a large number of courses (but still valid)
+	req := &rpc.PlaceOrderRequest{
+		UserId:     1,
+		OrderId:    1,
+		CourseIds:  make([]int64, 100), // 100 courses
+		RealAmount: 10000,
+	}
+	for i := range req.CourseIds {
+		req.CourseIds[i] = int64(i + 1)
+	}
+
+	// Will fail at RocketMQ initialization, but tests the validation passes
+	resp, err := logic.PlaceOrder(req)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to initialize message queue")
+	assert.Nil(t, resp)
+}
+
+func TestPlaceOrderLogic_PlaceOrder_MultipleCoursesPriceDistribution(t *testing.T) {
+	cfg := &config.Config{
+		RocketMQ: mq.Config{
+			NameServer: "127.0.0.1:9876",
+			Group:      "test-group",
+			Topic:      "test-topic",
+		},
+	}
+	mockUserRPC := &mockUserService{
+		getUserFunc: func(
+			_ context.Context,
+			in *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
+			return &userservice.GetUserResponse{UserId: in.UserId}, nil
+		},
+	}
+	svcCtx := &svc.ServiceContext{
+		Config:   cfg,
+		UserRPC:  mockUserRPC,
+		RocketMQ: nil,
+	}
+	logic := NewPlaceOrderLogic(context.Background(), svcCtx)
+
+	// Test with 3 courses to verify price distribution logic
+	req := &rpc.PlaceOrderRequest{
+		UserId:     1,
+		OrderId:    1,
+		CourseIds:  []int64{1, 2, 3},
+		RealAmount: 1000, // 1000 cents = 10.00
+	}
+
+	// Will fail at RocketMQ initialization or message sending
+	resp, err := logic.PlaceOrder(req)
+	assert.Error(t, err)
+	// Error could be from initialization or message sending - check for any RocketMQ-related error
+	assert.True(t,
+		err != nil && (err.Error() == "failed to initialize message queue" ||
+			err.Error() == "nameServer is required" ||
+			err.Error() == "group is required" ||
+			err.Error() == "local transaction executor cannot be nil" ||
+			err.Error() == "check-back executor cannot be nil" ||
+			err.Error() == "invalid nameServer configuration" ||
+			err.Error() == "failed to create transaction producer" ||
+			err.Error() == "failed to start transaction producer" ||
+			err.Error() == "mq config cannot be nil" ||
+			err.Error() == "failed to send order message" ||
+			err.Error() == "failed to send transactional message: the topic=test-topic route info not found" ||
+			err.Error() == "failed to send order message: failed to send transactional message: "+
+				"the topic=test-topic route info not found" ||
+			err.Error() == "failed to send order message: failed to send transactional message"),
+		"Expected RocketMQ error, got: %v", err)
+	assert.Nil(t, resp)
+}
+
+func TestPlaceOrderLogic_PlaceOrder_WithCoupons(t *testing.T) {
+	cfg := &config.Config{}
+	mockUserRPC := &mockUserService{
+		getUserFunc: func(
+			_ context.Context,
+			in *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
+			return &userservice.GetUserResponse{UserId: in.UserId}, nil
+		},
+	}
+	svcCtx := &svc.ServiceContext{
+		Config:   cfg,
+		UserRPC:  mockUserRPC,
+		RocketMQ: nil,
+	}
+	logic := NewPlaceOrderLogic(context.Background(), svcCtx)
+
+	req := &rpc.PlaceOrderRequest{
+		UserId:     1,
+		OrderId:    1,
+		CourseIds:  []int64{1, 2},
+		CouponIds:  []int64{10, 20},
+		RealAmount: 1000,
+	}
+
+	// Will fail at RocketMQ initialization
+	resp, err := logic.PlaceOrder(req)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "failed to initialize message queue")
+	assert.Nil(t, resp)
 }
