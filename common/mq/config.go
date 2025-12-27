@@ -11,7 +11,7 @@ type Config struct {
 	// Topic name for messages
 	Topic string `json:"topic" yaml:"topic"`
 	// Retry times for sending messages (default: 2)
-	RetryTimes int `json:"retryTimes,optional" yaml:"retryTimes,optional"`
+	RetryTimes int `json:"retryTimes,omitempty" yaml:"retryTimes,omitempty"`
 	// Timeout for sending messages in milliseconds (default: 3000)
-	SendTimeout int `json:"sendTimeout,optional" yaml:"sendTimeout,optional"`
+	SendTimeout int `json:"sendTimeout,omitempty" yaml:"sendTimeout,omitempty"`
 }

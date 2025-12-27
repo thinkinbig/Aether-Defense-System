@@ -21,10 +21,6 @@ import (
 	"github.com/aether-defense-system/test/integration"
 )
 
-// This test is the "moved" version of the previously-added integration test that directly imported
-// internal/logic. Per Go's internal package rules, tests under test/integration cannot import
-// service/.../internal/* packages. Instead, we validate the same behavior through an in-process gRPC
-// server, which exercises internal/logic via the generated server implementation.
 func TestIntegration_StockDeduction_GrpcInProcess(t *testing.T) {
 	env := integration.SetupTestEnvironment(t)
 	redisCtx := env.Context()

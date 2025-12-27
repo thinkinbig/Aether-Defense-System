@@ -51,8 +51,14 @@ type transactionListener struct {
 func (tl *transactionListener) ExecuteLocalTransaction(msg *primitive.Message) primitive.LocalTransactionState {
 	ctx := context.Background()
 	newMsg := primitive.NewMessage(msg.Topic, msg.Body)
+	// Create MessageExt - copying only necessary fields to minimize lock copying
+	// Note: primitive.Message contains sync.RWMutex, but we only copy Topic and Body fields
+	//nolint:govet // unavoidable due to RocketMQ API design
 	msgExt := &primitive.MessageExt{
-		Message: *newMsg,
+		Message: primitive.Message{
+			Topic: newMsg.Topic,
+			Body:  newMsg.Body,
+		},
 	}
 
 	state, err := tl.executor(ctx, msgExt)

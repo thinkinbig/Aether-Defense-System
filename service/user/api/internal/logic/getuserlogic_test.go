@@ -13,12 +13,20 @@ import (
 	userservice "github.com/aether-defense-system/service/user/rpc/userservice"
 )
 
-// mockUserRPC mocks the UserRPC service
+// mockUserRPC mocks the UserRPC service.
 type mockUserRPC struct {
-	getUserFunc func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error)
+	getUserFunc func(
+		ctx context.Context,
+		in *userservice.GetUserRequest,
+		opts ...grpc.CallOption,
+	) (*userservice.GetUserResponse, error)
 }
 
-func (m *mockUserRPC) GetUser(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+func (m *mockUserRPC) GetUser(
+	ctx context.Context,
+	in *userservice.GetUserRequest,
+	opts ...grpc.CallOption,
+) (*userservice.GetUserResponse, error) {
 	if m.getUserFunc != nil {
 		return m.getUserFunc(ctx, in, opts...)
 	}
@@ -34,10 +42,10 @@ func TestGetUserLogic_GetUser_ValidationErrors(t *testing.T) {
 	logic := NewGetUserLogic(context.Background(), svcCtx)
 
 	tests := []struct {
-		name    string
 		req     *types.GetUserRequest
-		wantErr bool
+		name    string
 		errMsg  string
+		wantErr bool
 	}{
 		{
 			name: "invalid user id - zero",
@@ -75,7 +83,11 @@ func TestGetUserLogic_GetUser_ValidationErrors(t *testing.T) {
 
 func TestGetUserLogic_GetUser_Success(t *testing.T) {
 	mockRPC := &mockUserRPC{
-		getUserFunc: func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+		getUserFunc: func(
+			_ context.Context,
+			in *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
 			return &userservice.GetUserResponse{
 				UserId:   in.UserId,
 				Username: "testuser",
@@ -102,7 +114,11 @@ func TestGetUserLogic_GetUser_Success(t *testing.T) {
 
 func TestGetUserLogic_GetUser_RPCError(t *testing.T) {
 	mockRPC := &mockUserRPC{
-		getUserFunc: func(ctx context.Context, in *userservice.GetUserRequest, opts ...grpc.CallOption) (*userservice.GetUserResponse, error) {
+		getUserFunc: func(
+			_ context.Context,
+			_ *userservice.GetUserRequest,
+			_ ...grpc.CallOption,
+		) (*userservice.GetUserResponse, error) {
 			return nil, fmt.Errorf("user not found")
 		},
 	}

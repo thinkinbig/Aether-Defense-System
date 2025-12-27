@@ -13,7 +13,9 @@ type AuthConf struct {
 }
 
 // Config defines configuration for the trade HTTP API.
-type Config struct {
+// Note: fieldalignment warnings for this struct are acceptable in this project
+// because it is constructed infrequently and not on hot paths.
+type Config struct { //nolint:govet
 	rest.RestConf
 	Auth     AuthConf            `json:"auth" yaml:"auth"`
 	TradeRPC *zrpc.RpcClientConf `json:"tradeRpc" yaml:"tradeRpc"`
