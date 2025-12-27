@@ -50,4 +50,4 @@ USER nonroot:nonroot
 EXPOSE 8888
 
 # Run the binary
-ENTRYPOINT ["/app/user-api", "-f", "/etc/user-api/user-api.yaml"]
+ENTRYPOINT ["/app/user-api", "-f", "/app/user-api.yaml"]
