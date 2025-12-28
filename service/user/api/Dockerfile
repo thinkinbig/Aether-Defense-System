@@ -26,21 +26,20 @@ RUN --mount=type=cache,target=/go-mod-cache \
 COPY . .
 
 # Build with maximum optimization
-# Build from module root with package path
+WORKDIR /build/service/user/api/cmd/user-api
 RUN --mount=type=cache,target=/go-mod-cache \
     --mount=type=cache,target=/go-cache \
     go build \
     -ldflags="-w -s -X main.version=1.0.0" \
     -trimpath \
     -buildmode=exe \
-    -o /build/user-api \
-    ./service/user/api/cmd/user-api
+    -o user-api .
 
 # Use distroless for minimal runtime
 FROM gcr.io/distroless/static-debian12:nonroot
 
 # Copy binary and config
-COPY --from=builder /build/user-api /app/user-api
+COPY --from=builder /build/service/user/api/cmd/user-api/user-api /app/user-api
 COPY service/user/api/etc/user-api.yaml /app/user-api.yaml
 
 # Set working directory and user
