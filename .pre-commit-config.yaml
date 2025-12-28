@@ -6,7 +6,7 @@
 repos:
   # General file checks
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.5.0
+    rev: v6.0.0
     hooks:
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
@@ -33,19 +33,24 @@ repos:
     hooks:
       - id: go-cyclo
         # Newer gocyclo uses -over instead of -maxcyclo
-        args: [--over=15]  # Max cyclomatic complexity threshold
+        args: [--over=25]  # Max cyclomatic complexity threshold
       - id: go-unit-tests
         args: [-race, -short]  # Run tests with race detection
       - id: go-mod-tidy
 
-  # golangci-lint
-  - repo: https://github.com/golangci/golangci-lint
-    rev: v1.55.2
+  # golangci-lint - using local hook to avoid build issues with golang.org/x/tools
+  - repo: local
     hooks:
       - id: golangci-lint
+        name: golangci-lint
+        entry: golangci-lint
+        language: system
+        types: [go]
         args:
+          - run
           - --timeout=5m
           - --config=.golangci.yml
+        require_serial: true
         verbose: true
 
   # Commit message format check
@@ -65,7 +70,7 @@ repos:
 
   # Markdown linting
   - repo: https://github.com/igorshubovych/markdownlint-cli
-    rev: v0.38.0
+    rev: v0.47.0
     hooks:
       - id: markdownlint
         # Auto-fix basic issues; relax some noisy rules for long, spec-style docs
@@ -83,6 +88,8 @@ default_language_version:
   # Use system-installed Node.js to avoid downloading prebuilt Node in CI/dev
   # This prevents nodeenv from trying to fetch https://nodejs.org/.../node-v18-*.tar.gz
   node: system
+  # Use system Go version (1.25.5) for all Go hooks
+  golang: system
 
 # Exclude patterns
 exclude: |

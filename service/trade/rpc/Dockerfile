@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Ultra-slim optimized build
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/go-mod-cache \
 COPY . .
 
 # Build with maximum optimization
-WORKDIR /build/service/trade/rpc
+WORKDIR /build/service/trade/rpc/cmd/trade-rpc
 RUN --mount=type=cache,target=/go-mod-cache \
     --mount=type=cache,target=/go-cache \
     go build \
@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/go-mod-cache \
 FROM gcr.io/distroless/static-debian12:nonroot
 
 # Copy binary and config
-COPY --from=builder /build/service/trade/rpc/trade-rpc /app/trade-rpc
+COPY --from=builder /build/service/trade/rpc/cmd/trade-rpc/trade-rpc /app/trade-rpc
 COPY service/trade/rpc/etc/trade.yaml /app/trade.yaml
 
 # Set working directory and user
@@ -50,4 +50,4 @@ USER nonroot:nonroot
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/trade-rpc", "-f", "/etc/trade-rpc/trade.yaml"]
+ENTRYPOINT ["/app/trade-rpc", "-f", "/app/trade.yaml"]

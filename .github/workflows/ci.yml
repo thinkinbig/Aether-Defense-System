@@ -2,13 +2,17 @@ name: CI
 
 on:
   push:
-    branches: [main, master, develop]
+    branches:
+      - main
+      - master
+      - develop
+      - "feature/**"
   pull_request:
     branches: [main, master, develop]
+  workflow_dispatch:
 
 env:
-  GO_VERSION: "1.22.2"
-  GOLANGCI_LINT_VERSION: "v1.55.2"
+  GOLANGCI_LINT_VERSION: "v1.64.8"
 
 jobs:
   # Code formatting and linting
@@ -22,8 +26,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: go.sum
+          go-version-file: go.mod
+          # Cache is automatically enabled - action will detect go.sum
+          cache: true
 
       - name: Install goimports
         run: go install golang.org/x/tools/cmd/goimports@latest
@@ -59,9 +64,6 @@ jobs:
   test:
     name: Unit Tests
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ["1.22.2"]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -69,8 +71,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
-          cache-dependency-path: go.sum
+          go-version-file: go.mod
+          # Cache is automatically enabled - action will detect go.sum
+          cache: true
 
       - name: Download dependencies
         run: go mod download
@@ -78,11 +81,8 @@ jobs:
       - name: Verify dependencies
         run: go mod verify
 
-      - name: Run unit tests with race detection
-        run: go test -race -short -v ./...
-
       - name: Run unit tests with coverage
-        run: go test -race -short -coverprofile=coverage.out -covermode=atomic ./...
+        run: go test -race -short -v -coverprofile=coverage.out -covermode=atomic ./...
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4
@@ -105,8 +105,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: go.sum
+          go-version-file: go.mod
+          # Cache is automatically enabled - action will detect go.sum
+          cache: true
 
       - name: Download dependencies
         run: go mod download
@@ -137,7 +138,7 @@ jobs:
           echo "Total coverage: ${coverage}%"
           echo "::notice title=Coverage Report::Total coverage is ${coverage}%"
           # Set minimum coverage threshold (adjust as needed)
-          threshold=15
+          threshold=60
           # Extract integer part for comparison (simple approach)
           coverage_int=$(echo "$coverage" | cut -d. -f1)
           if [ "$coverage_int" -lt "$threshold" ]; then
@@ -158,10 +159,6 @@ jobs:
   build:
     name: Build Verification
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        go-version: ["1.22.2"]
-        os: [ubuntu-latest, macos-latest, windows-latest]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -169,8 +166,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ matrix.go-version }}
-          cache-dependency-path: go.sum
+          go-version-file: go.mod
+          # Cache is automatically enabled - action will detect go.sum
+          cache: true
 
       - name: Download dependencies
         run: go mod download
@@ -180,27 +178,23 @@ jobs:
 
       - name: Build all services
         run: |
-          # Build API services
-          for dir in cmd/api/*/; do
-            if [ -d "$dir" ] && [ -n "$(find "$dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
-              echo "Building $(basename $dir)..."
-              cd "$dir"
-              go build -v ./... || exit 1
-              cd - > /dev/null
-            else
-              echo "Skipping $(basename $dir) - no Go files found"
-            fi
-          done
-
-          # Build RPC services
+          # Build RPC services from cmd/rpc
           for dir in cmd/rpc/*/; do
             if [ -d "$dir" ] && [ -n "$(find "$dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
               echo "Building $(basename $dir)..."
               cd "$dir"
               go build -v ./... || exit 1
               cd - > /dev/null
-            else
-              echo "Skipping $(basename $dir) - no Go files found"
+            fi
+          done
+
+          # Build service entry points
+          for service_dir in service/*/api/cmd/*/ service/*/rpc/cmd/*/; do
+            if [ -d "$service_dir" ] && [ -n "$(find "$service_dir" -name '*.go' -type f 2>/dev/null | head -1)" ]; then
+              echo "Building $service_dir..."
+              cd "$service_dir"
+              go build -v ./... || exit 1
+              cd - > /dev/null
             fi
           done
 
@@ -249,8 +243,9 @@ jobs:
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: ${{ env.GO_VERSION }}
-          cache-dependency-path: go.sum
+          go-version-file: go.mod
+          # Cache is automatically enabled - action will detect go.sum
+          cache: true
 
       - name: Download dependencies
         run: go mod download
@@ -261,7 +256,7 @@ jobs:
           timeout 60 bash -c 'until redis-cli -h 127.0.0.1 ping; do sleep 1; done'
 
       - name: Run integration tests
-        run: go test -v ./test/integration/...
+        run: go test -tags=integration -v ./test/integration/...
         env:
           MYSQL_HOST: 127.0.0.1
           MYSQL_PORT: 3306

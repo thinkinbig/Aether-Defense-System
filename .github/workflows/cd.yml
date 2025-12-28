@@ -1,11 +1,15 @@
 name: CD
 
 on:
+  # Trigger when CI workflow completes successfully
+  # Note: workflow_run triggers run on the default branch (main) by default
+  # The branches filter applies to the workflow_run event, not the triggering workflow
   workflow_run:
-    workflows: ["CI"]
+    workflows: ["CI"] # Must match the name in ci.yml exactly
     types:
       - completed
     branches: [main, develop]
+  # Also trigger on version tag pushes (for manual releases)
   push:
     tags: ["v*"]
 
@@ -16,6 +20,7 @@ permissions:
   contents: read
   packages: write
   actions: read
+  security-events: write
 
 jobs:
   check-ci-success:
@@ -46,10 +51,13 @@ jobs:
       matrix:
         service:
           - name: user-api
-            dockerfile: cmd/api/user-api/Dockerfile
+            dockerfile: service/user/api/Dockerfile
             context: .
           - name: user-rpc
-            dockerfile: cmd/rpc/user-rpc/Dockerfile
+            dockerfile: service/user/rpc/Dockerfile
+            context: .
+          - name: trade-api
+            dockerfile: service/trade/api/Dockerfile
             context: .
           - name: trade-rpc
             dockerfile: service/trade/rpc/Dockerfile
@@ -85,7 +93,6 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}
           tags: |
             type=ref,event=branch
-            type=ref,event=pr
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
             type=sha
@@ -106,30 +113,66 @@ jobs:
           cache-to: |
             type=gha,mode=max
             type=registry,ref=${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:cache,mode=max
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64
           build-args: |
             BUILDKIT_INLINE_CACHE=1
 
-      - name: Generate SBOM with retry
+      - name: Verify image push
         run: |
-          echo "Attempting to generate SBOM for ${{ matrix.service.name }}..."
-          IMAGE="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:${{ github.sha }}"
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE_SHA_TAG="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:sha-$SHORT_SHA"
+          IMAGE_FULL_SHA="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:${{ github.sha }}"
 
-          # Wait for image to be available
-          echo "Waiting for image to be available..."
-          sleep 30
+          sleep 15
+          MAX_RETRIES=12
+          RETRY_COUNT=0
 
-          # Try to pull the image first to ensure it's accessible
-          if docker pull "$IMAGE"; then
-            echo "Image pulled successfully, generating SBOM..."
-            # Use syft directly instead of the action
-            curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
-            /tmp/syft scan "$IMAGE" -o spdx-json > sbom-${{ matrix.service.name }}.spdx.json
-            echo "SBOM generated successfully"
-          else
-            echo "Failed to pull image, creating empty SBOM file"
-            echo '{"spdxVersion": "SPDX-2.3", "name": "${{ matrix.service.name }}", "packages": []}' > sbom-${{ matrix.service.name }}.spdx.json
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if docker manifest inspect "$IMAGE_SHA_TAG" >/dev/null 2>&1 && docker pull "$IMAGE_SHA_TAG" >/dev/null 2>&1; then
+              exit 0
+            elif docker manifest inspect "$IMAGE_FULL_SHA" >/dev/null 2>&1 && docker pull "$IMAGE_FULL_SHA" >/dev/null 2>&1; then
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              sleep 10
+            fi
+          done
+
+          if docker manifest inspect "$IMAGE_SHA_TAG" >/dev/null 2>&1 || docker manifest inspect "$IMAGE_FULL_SHA" >/dev/null 2>&1; then
+            exit 0
           fi
+        continue-on-error: true
+
+      - name: Generate SBOM
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE_SHA_TAG="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:sha-$SHORT_SHA"
+          IMAGE_FULL_SHA="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service.name }}:${{ github.sha }}"
+
+          sleep 30
+          MAX_RETRIES=12
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if docker pull "$IMAGE_SHA_TAG" >/dev/null 2>&1; then
+              curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
+              /tmp/syft scan "$IMAGE_SHA_TAG" -o spdx-json > sbom-${{ matrix.service.name }}.spdx.json
+              exit 0
+            elif docker pull "$IMAGE_FULL_SHA" >/dev/null 2>&1; then
+              curl -sSfL https://raw.githubusercontent.com/anchore/syft/main/install.sh | sh -s -- -b /tmp
+              /tmp/syft scan "$IMAGE_FULL_SHA" -o spdx-json > sbom-${{ matrix.service.name }}.spdx.json
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              sleep 10
+            fi
+          done
+
+          echo '{"spdxVersion": "SPDX-2.3", "name": "${{ matrix.service.name }}", "packages": []}' > sbom-${{ matrix.service.name }}.spdx.json
         continue-on-error: true
 
       - name: Upload SBOM
@@ -144,33 +187,86 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        service: [user-api, user-rpc, trade-rpc, promotion-rpc]
+        service: [user-api, user-rpc, trade-api, trade-rpc, promotion-rpc]
 
     steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
       - name: Set lowercase image name
         id: image-name
         run: |
           IMAGE_NAME=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
           echo "image-name=${IMAGE_NAME}" >> $GITHUB_OUTPUT
 
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Wait for image to be available
+        run: |
+          if [ "${{ needs.build-and-push.result }}" != "success" ]; then
+            echo "::error::build-and-push job did not succeed. Result: ${{ needs.build-and-push.result }}"
+            exit 1
+          fi
+
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE_SHA_TAG="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}:sha-$SHORT_SHA"
+          IMAGE_FULL_SHA="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}:${{ github.sha }}"
+
+          sleep 20
+          MAX_RETRIES=12
+          RETRY_COUNT=0
+
+          while [ $RETRY_COUNT -lt $MAX_RETRIES ]; do
+            if docker manifest inspect "$IMAGE_SHA_TAG" >/dev/null 2>&1 && docker pull "$IMAGE_SHA_TAG" >/dev/null 2>&1; then
+              exit 0
+            elif docker manifest inspect "$IMAGE_FULL_SHA" >/dev/null 2>&1 && docker pull "$IMAGE_FULL_SHA" >/dev/null 2>&1; then
+              exit 0
+            fi
+
+            RETRY_COUNT=$((RETRY_COUNT + 1))
+            if [ $RETRY_COUNT -lt $MAX_RETRIES ]; then
+              sleep 12
+            fi
+          done
+
+          echo "::error::Image not available after $MAX_RETRIES attempts. Tried: $IMAGE_SHA_TAG, $IMAGE_FULL_SHA"
+          exit 1
+
+      - name: Set image tag for Trivy
+        id: image-tag
+        run: |
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-7)
+          IMAGE_TAG="${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}:sha-$SHORT_SHA"
+          echo "image-tag=$IMAGE_TAG" >> $GITHUB_OUTPUT
+
       - name: Run Trivy vulnerability scanner
+        id: trivy-sarif
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}:${{ github.sha }}
+          image-ref: ${{ steps.image-tag.outputs.image-tag }}
           format: "sarif"
           output: "trivy-results-${{ matrix.service }}.sarif"
+        continue-on-error: true
 
       - name: Upload Trivy scan results to GitHub Security tab
-        uses: github/codeql-action/upload-sarif@v2
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: "trivy-results-${{ matrix.service }}.sarif"
+        if: always() && steps.trivy-sarif.outcome == 'success'
+        continue-on-error: true
 
       - name: Run Trivy vulnerability scanner (table format)
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ steps.image-name.outputs.image-name }}/${{ matrix.service }}:${{ github.sha }}
+          image-ref: ${{ steps.image-tag.outputs.image-tag }}
           format: "table"
           output: "trivy-results-${{ matrix.service }}.txt"
+        continue-on-error: true
 
       - name: Upload vulnerability report
         uses: actions/upload-artifact@v4

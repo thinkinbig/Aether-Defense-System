@@ -47,10 +47,10 @@ By default it loads `service/user/rpc/etc/user.yaml` and listens on `0.0.0.0:808
 From the project root:
 
 ```bash
-go run ./cmd/api/user-api
+go run ./service/user/api/cmd/user-api
 ```
 
-It loads `cmd/api/user-api/etc/user-api.yaml`, listens on `0.0.0.0:8888`,
+It loads `service/user/api/etc/user-api.yaml`, listens on `0.0.0.0:8888`,
 and calls the local `user.rpc` directly.
 
 #### 4. Verify the Endpoint

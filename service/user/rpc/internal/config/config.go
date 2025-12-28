@@ -1,9 +1,14 @@
 // Package config contains configuration for user RPC service.
 package config
 
-import "github.com/zeromicro/go-zero/zrpc"
+import (
+	"github.com/zeromicro/go-zero/zrpc"
+
+	"github.com/aether-defense-system/common/database"
+)
 
 // Config represents the configuration for user RPC service.
 type Config struct {
 	zrpc.RpcServerConf
+	Database database.Config `json:"database" yaml:"database"`
 }

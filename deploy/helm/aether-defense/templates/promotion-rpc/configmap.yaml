@@ -12,6 +12,17 @@ data:
     ListenOn: {{ .Values.promotionRpc.config.listenOn }}
     Etcd:
       Hosts:
-        - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
+        - "{{ include "aether-defense.fullname" . }}-etcd-headless:{{ .Values.etcd.service.clientPort }}"
       Key: {{ .Values.promotionRpc.config.etcd.key }}
+    Database:
+      dsn: {{ .Values.promotionRpc.config.database.dsn | default "" | quote }}
+    InventoryRedis:
+      addr: {{ .Values.promotionRpc.config.redis.addr | default "aether-defense-redis:6379" }}
+      password: {{ .Values.promotionRpc.config.redis.password | default "" | quote }}
+      db: {{ .Values.promotionRpc.config.redis.db | default 0 }}
+      pool_size: {{ .Values.promotionRpc.config.redis.pool_size | default 100 }}
+      min_idle_conns: {{ .Values.promotionRpc.config.redis.min_idle_conns | default 10 }}
+      dial_timeout: {{ .Values.promotionRpc.config.redis.dial_timeout | default "5s" }}
+      read_timeout: {{ .Values.promotionRpc.config.redis.read_timeout | default "3s" }}
+      write_timeout: {{ .Values.promotionRpc.config.redis.write_timeout | default "3s" }}
 {{- end }}

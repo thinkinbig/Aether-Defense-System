@@ -1,0 +1,263 @@
+# Docker Compose for local development and testing
+# This file includes infrastructure services and application services with build
+#
+# Usage:
+#   # Start only infrastructure (for local Go development):
+#   docker-compose -f deploy/docker/docker-compose.yml up -d etcd redis mysql
+#
+#   # Build and start all services (full containerized):
+#   docker-compose -f deploy/docker/docker-compose.yml up --build -d
+#
+#   # Start all services (without build):
+#   docker-compose -f deploy/docker/docker-compose.yml up -d
+#
+#   # Stop all services:
+#   docker-compose -f deploy/docker/docker-compose.yml down
+
+services:
+  # Infrastructure Services
+  etcd:
+    image: quay.io/coreos/etcd:v3.5.15
+    container_name: aether-defense-etcd
+    ports:
+      - "2379:2379"
+      - "2380:2380"
+    volumes:
+      - etcd-data:/etcd-data
+    command:
+      - /usr/local/bin/etcd
+      - --data-dir=/etcd-data
+      - --name=etcd-0
+      - --listen-client-urls=http://0.0.0.0:2379
+      - --advertise-client-urls=http://etcd:2379
+      - --listen-peer-urls=http://0.0.0.0:2380
+      - --initial-advertise-peer-urls=http://etcd:2380
+      - --initial-cluster=etcd-0=http://etcd:2380
+      - --initial-cluster-token=aether-defense-etcd-cluster
+      - --initial-cluster-state=new
+    healthcheck:
+      test: ["CMD", "etcdctl", "endpoint", "health"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - aether-defense-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: aether-defense-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    command:
+      - redis-server
+      - --appendonly yes
+      - --maxmemory 512mb
+      - --maxmemory-policy allkeys-lru
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - aether-defense-network
+
+  mysql:
+    image: mysql:8.0
+    container_name: aether-defense-mysql
+    environment:
+      - MYSQL_ROOT_PASSWORD=root123
+      - MYSQL_DATABASE=aether_defense
+      - MYSQL_USER=aether
+      - MYSQL_PASSWORD=aether123
+      - TZ=Europe/Berlin
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./mysql/init:/docker-entrypoint-initdb.d:ro
+    command:
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_general_ci
+      - --default-authentication-plugin=mysql_native_password
+      - --max-connections=1000
+      - --innodb-buffer-pool-size=512M
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "mysqladmin",
+          "ping",
+          "-h",
+          "localhost",
+          "-u",
+          "root",
+          "-proot123",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - aether-defense-network
+
+  rocketmq-nameserver:
+    image: apache/rocketmq:5.2.0
+    container_name: aether-defense-rocketmq-nameserver
+    command: sh mqnamesrv
+    ports:
+      - "9876:9876"
+    environment:
+      - JAVA_OPT_EXT=-server -Xms512m -Xmx512m -Xmn256m
+    volumes:
+      - rocketmq-nameserver-logs:/home/rocketmq/logs
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep mqnamesrv || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - aether-defense-network
+
+  rocketmq-broker-init:
+    image: apache/rocketmq:5.2.0
+    container_name: aether-defense-rocketmq-broker-init
+    command: sh -c "mkdir -p /home/rocketmq/store/schedule && chown -R rocketmq:rocketmq /home/rocketmq/store || true"
+    volumes:
+      - rocketmq-broker-store:/home/rocketmq/store
+    user: root
+    profiles:
+      - init
+
+  rocketmq-broker:
+    image: apache/rocketmq:5.2.0
+    container_name: aether-defense-rocketmq-broker
+    command: sh mqbroker -n rocketmq-nameserver:9876 -c /home/rocketmq/rocketmq-5.2.0/conf/broker.conf
+    ports:
+      - "10909:10909"
+      - "10911:10911"
+    environment:
+      - JAVA_OPT_EXT=-server -Xms512m -Xmx512m -Xmn256m
+      - NAMESRV_ADDR=rocketmq-nameserver:9876
+    volumes:
+      - rocketmq-broker-logs:/home/rocketmq/logs
+      - rocketmq-broker-store:/home/rocketmq/store
+      - ./rocketmq/broker.conf:/home/rocketmq/rocketmq-5.2.0/conf/broker.conf:ro
+    depends_on:
+      rocketmq-nameserver:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "ps aux | grep -v grep | grep mqbroker || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    networks:
+      - aether-defense-network
+
+  # Application Services
+  user-rpc:
+    build:
+      context: ../..
+      dockerfile: service/user/rpc/Dockerfile
+    container_name: aether-defense-user-rpc
+    ports:
+      - "8080:8080"
+    environment:
+      - CONFIG_FILE=/app/user.yaml
+    volumes:
+      - ./config-docker/user-rpc.yaml:/app/user.yaml:ro
+    depends_on:
+      etcd:
+        condition: service_healthy
+    # Note: distroless images don't have shell, so we disable healthcheck
+    # Health will be verified by service startup and logs
+    networks:
+      - aether-defense-network
+    restart: unless-stopped
+
+  user-api:
+    build:
+      context: ../..
+      dockerfile: service/user/api/Dockerfile
+    container_name: aether-defense-user-api
+    ports:
+      - "8888:8888"
+    environment:
+      - CONFIG_FILE=/app/user-api.yaml
+    volumes:
+      - ./config-docker/user-api.yaml:/app/user-api.yaml:ro
+    depends_on:
+      etcd:
+        condition: service_healthy
+      user-rpc:
+        condition: service_started
+    # Note: distroless images don't have shell, so we disable healthcheck
+    # Health will be verified by service startup and logs
+    networks:
+      - aether-defense-network
+    restart: unless-stopped
+
+  trade-rpc:
+    build:
+      context: ../..
+      dockerfile: service/trade/rpc/Dockerfile
+    container_name: aether-defense-trade-rpc
+    ports:
+      - "8081:8080"
+    environment:
+      - CONFIG_FILE=/app/trade.yaml
+    volumes:
+      - ./config-docker/trade-rpc.yaml:/app/trade.yaml:ro
+    depends_on:
+      etcd:
+        condition: service_healthy
+      user-rpc:
+        condition: service_started
+    # Note: distroless images don't have shell, so we disable healthcheck
+    # Health will be verified by service startup and logs
+    networks:
+      - aether-defense-network
+    restart: unless-stopped
+
+  promotion-rpc:
+    build:
+      context: ../..
+      dockerfile: service/promotion/rpc/Dockerfile
+    container_name: aether-defense-promotion-rpc
+    ports:
+      - "8082:8080"
+    environment:
+      - CONFIG_FILE=/app/promotion.yaml
+    volumes:
+      - ./config-docker/promotion-rpc.yaml:/app/promotion.yaml:ro
+    depends_on:
+      etcd:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Note: distroless images don't have shell, so we disable healthcheck
+    # Health will be verified by service startup and logs
+    networks:
+      - aether-defense-network
+    restart: unless-stopped
+
+volumes:
+  etcd-data:
+    driver: local
+  redis-data:
+    driver: local
+  mysql-data:
+    driver: local
+  rocketmq-nameserver-logs:
+    driver: local
+  rocketmq-broker-logs:
+    driver: local
+  rocketmq-broker-store:
+    driver: local
+
+networks:
+  aether-defense-network:
+    driver: bridge
+    name: aether-defense-network

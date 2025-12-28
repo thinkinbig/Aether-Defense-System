@@ -12,6 +12,6 @@ data:
     ListenOn: {{ .Values.userRpc.config.listenOn }}
     Etcd:
       Hosts:
-        - "{{ include "aether-defense.fullname" . }}-etcd:{{ .Values.etcd.service.port }}"
+        - "{{ include "aether-defense.fullname" . }}-etcd-headless:{{ .Values.etcd.service.clientPort }}"
       Key: {{ .Values.userRpc.config.etcd.key }}
 {{- end }}

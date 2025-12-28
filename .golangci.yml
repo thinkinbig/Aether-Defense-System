@@ -186,6 +186,12 @@ linters:
 
 issues:
   exclude-rules:
+    # go-zero config uses json tag options like ",optional" which SA5008 doesn't recognize.
+    - path: common/database/client\.go
+      text: "SA5008"
+      linters:
+        - staticcheck
+
     # Exclude generated files
     - path: _gen\.go
       linters:

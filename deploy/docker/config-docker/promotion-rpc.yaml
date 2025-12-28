@@ -1,0 +1,25 @@
+# Docker environment configuration for promotion-rpc
+# This config uses service names from docker-compose network
+
+Name: promotion.rpc
+ListenOn: 0.0.0.0:8080
+
+Etcd:
+  Hosts:
+    - etcd:2379 # Use service name in docker network
+  Key: promotion.rpc
+
+Database:
+  dsn: "" # optional for now; service will skip DB init when empty
+
+InventoryRedis:
+  addr: redis:6379 # Use service name in docker network (primary, actually used)
+  host: "" # Required by go-zero validation, but not used if addr is set
+  key: "" # Required by go-zero validation, but not used
+  password: ""
+  db: 0
+  pool_size: 100
+  min_idle_conns: 10
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s

@@ -1,6 +1,20 @@
 Name: promotion.rpc
 ListenOn: 0.0.0.0:8080
+
 Etcd:
   Hosts:
-    - aether-defense-etcd-headless:2379
+    - 127.0.0.1:2379
   Key: promotion.rpc
+
+Database:
+  dsn: "" # optional for now; service will skip DB init when empty
+
+InventoryRedis:
+  addr: 127.0.0.1:6379
+  password: ""
+  db: 0
+  pool_size: 100
+  min_idle_conns: 10
+  dial_timeout: 5s
+  read_timeout: 3s
+  write_timeout: 3s

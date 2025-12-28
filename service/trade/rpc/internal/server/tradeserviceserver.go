@@ -2,6 +2,7 @@
 // goctl 1.9.2
 // Source: trade.proto
 
+// Package server implements the gRPC server for the trade service.
 package server
 
 import (

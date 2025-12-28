@@ -1,6 +1,29 @@
 Name: trade.rpc
 ListenOn: 0.0.0.0:8080
+
 Etcd:
   Hosts:
     - 127.0.0.1:2379
   Key: trade.rpc
+
+Database:
+  DSN: "aether:aether123@tcp(127.0.0.1:3306)/aether_defense?charset=utf8mb4&parseTime=True&loc=Local"
+
+UserRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: user.rpc
+
+PromotionRpc:
+  Etcd:
+    Hosts:
+      - 127.0.0.1:2379
+    Key: promotion.rpc
+
+RocketMQ:
+  NameServer: "127.0.0.1:9876"
+  Group: "trade-producer-group"
+  Topic: "order-topic"
+  RetryTimes: 2
+  SendTimeout: 3000

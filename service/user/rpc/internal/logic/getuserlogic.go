@@ -49,11 +49,21 @@ func (l *GetUserLogic) GetUser(req *rpc.GetUserRequest) (*rpc.GetUserResponse, e
 
 	l.Infof("getting user information for userId=%d", req.UserId)
 
-	// TODO: fetch user from repository/cache via svcCtx.
-	// For now we return a predictable stub that can be used in callers and tests.
+	// Fetch user from repository
+	if l.svcCtx.UserRepo == nil {
+		l.Errorf("user repository not initialized")
+		return nil, fmt.Errorf("user repository not available")
+	}
+
+	user, err := l.svcCtx.UserRepo.GetByID(l.ctx, req.UserId)
+	if err != nil {
+		l.Errorf("failed to get user: %v, user_id=%d", err, req.UserId)
+		return nil, fmt.Errorf("failed to get user: %w", err)
+	}
+
 	return &rpc.GetUserResponse{
-		UserId:   req.UserId,
-		Username: "testuser",
-		Mobile:   "13800138000",
+		UserId:   user.ID,
+		Username: user.Username,
+		Mobile:   user.Mobile,
 	}, nil
 }

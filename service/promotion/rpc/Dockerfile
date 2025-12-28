@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 # Ultra-slim optimized build
-FROM golang:1.22-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 WORKDIR /build
 
@@ -26,7 +26,7 @@ RUN --mount=type=cache,target=/go-mod-cache \
 COPY . .
 
 # Build with maximum optimization
-WORKDIR /build/service/promotion/rpc
+WORKDIR /build/cmd/rpc/promotion-rpc
 RUN --mount=type=cache,target=/go-mod-cache \
     --mount=type=cache,target=/go-cache \
     go build \
@@ -39,7 +39,7 @@ RUN --mount=type=cache,target=/go-mod-cache \
 FROM gcr.io/distroless/static-debian12:nonroot
 
 # Copy binary and config
-COPY --from=builder /build/service/promotion/rpc/promotion-rpc /app/promotion-rpc
+COPY --from=builder /build/cmd/rpc/promotion-rpc/promotion-rpc /app/promotion-rpc
 COPY service/promotion/rpc/etc/promotion.yaml /app/promotion.yaml
 
 # Set working directory and user
@@ -50,4 +50,4 @@ USER nonroot:nonroot
 EXPOSE 8080
 
 # Run the binary
-ENTRYPOINT ["/app/promotion-rpc", "-f", "/etc/promotion-rpc/promotion.yaml"]
+ENTRYPOINT ["/app/promotion-rpc", "-f", "/app/promotion.yaml"]
