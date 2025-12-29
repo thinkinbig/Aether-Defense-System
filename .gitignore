@@ -9,7 +9,7 @@ bin/
 *.exe
 *.test
 promotion-rpc
-user-api
+/user-api
 cmd/api/user-api/user-api
 cmd/rpc/user-rpc/user-rpc
 cmd/api/trade-api/trade-api
